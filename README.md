@@ -1,6 +1,6 @@
 # jrl : JAX for Reinforcement Learning
 
-## Goal 
+## Goal
 Implement as many RL algorithms as possible in JAX
 
 ## Implementation whishlist
@@ -19,7 +19,7 @@ Implement as many RL algorithms as possible in JAX
 - [ ] Dreamer (https://arxiv.org/pdf/1912.01603)
 - [ ] DreamerV2 (https://arxiv.org/pdf/2010.02193)
 
-### PPO 
+### PPO
 - [ ] TRPO (https://arxiv.org/pdf/1502.05477)
 - [ ] PPO (http://arxiv.org/abs/1707.06347)
 
