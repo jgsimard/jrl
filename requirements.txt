@@ -11,3 +11,4 @@ torchvision~=0.13.1+cu116
 
 hydra-core
 pre-commit
+hydra
