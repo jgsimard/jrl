@@ -18,11 +18,11 @@ repos:
         language: system
         types: [python]
         always_run: true
-  - repo: https://github.com/psf/black
-    rev: 21.9b0
-    hooks:
-      - id: black
-        args: [--safe]
+#  - repo: https://github.com/psf/black
+#    rev: 21.9b0
+#    hooks:
+#      - id: black
+#        args: [--safe]
 
 
   - repo: local
