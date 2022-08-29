@@ -101,8 +101,10 @@ disable=raw-checker-failed,
         no-value-for-parameter,
         arguments-differ,
         missing-class-docstring,
-        missing-function-docstring
-#        too-many-branches,
+        missing-function-docstring,
+        bare-except,
+        too-few-public-methods,
+        too-many-branches,
 #        too-many-statements,
 #        duplicate-code
 
