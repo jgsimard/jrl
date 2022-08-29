@@ -98,7 +98,10 @@ disable=raw-checker-failed,
         invalid-name,
         too-many-instance-attributes,
         fixme,
-        no-value-for-parameter
+        no-value-for-parameter,
+        arguments-differ,
+        missing-class-docstring,
+        missing-function-docstring
 #        too-many-branches,
 #        too-many-statements,
 #        duplicate-code
