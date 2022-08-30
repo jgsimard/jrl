@@ -1,5 +1,5 @@
-#env_name: 'HalfCheetah-v2'
-env_name: 'Pendulum-v1'
+env_name: 'HalfCheetah-v2'
+#env_name: 'Pendulum-v1'
 save_dir: './tmp/'
 seed: 42
 eval_episodes: 10

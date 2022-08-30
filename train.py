@@ -1,15 +1,19 @@
 import os
 
-import gym
+import warnings # TODO remove this
+
 import hydra
 import numpy as np
 import tqdm
 from omegaconf import DictConfig, OmegaConf
 from tensorboardX import SummaryWriter
 
-# from evaluation import evaluate
 from agents.td3 import TD3Learner
 from data.replay_buffer import ReplayBuffer
+from common.env.utils import make_env
+from common.evaluation import evaluate
+
+warnings.filterwarnings("ignore")
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -24,14 +28,16 @@ def main(cfg: DictConfig) -> None:
     # print(params)
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
     exp_path = hydra_cfg['runtime']['output_dir']
-    print(os.getcwd())
-
+    # video_train_folder = os.path.join(exp_path, "video", "train")
+    # video_eval_folder = os.path.join(exp_path, "video", "eval")
 
     summary_writer = SummaryWriter(
         os.path.join(exp_path, "test"))
 
-    # env = envpool.make_gym(params['env_name'], num_envs=1)
-    env = gym.make(params['env_name'])
+    env_name = params['env_name']
+    print(env_name)
+    env = make_env(env_name, params['seed'])
+    eval_env = make_env(env_name, params['seed'] + 69)
 
     agent = TD3Learner(
         params['seed'],
@@ -41,7 +47,7 @@ def main(cfg: DictConfig) -> None:
     replay_buffer = ReplayBuffer(env.observation_space,
                                  env.action_space,
                                  params['replay_buffer_size'])
-
+    eval_returns =[]
     done = False
     observation = env.reset()
     print(observation, type(observation), observation.shape)
@@ -74,19 +80,19 @@ def main(cfg: DictConfig) -> None:
                     summary_writer.add_scalar(f'training/{k}', v, i)
                 summary_writer.flush()
 
-        # if i % params['eval_interval'] == 0:
-        #     eval_stats = evaluate(agent, eval_env, params['eval_episodes'])
-        #
-        #     for k, v in eval_stats.items():
-        #         summary_writer.add_scalar(f'evaluation/average_{k}s', v,
-        #                                   info['total']['timesteps'])
-        #     summary_writer.flush()
-        #
-        #     eval_returns.append(
-        #         (info['total']['timesteps'], eval_stats['return']))
-        #     np.savetxt(os.path.join(FLAGS.save_dir, f'{FLAGS.seed}.txt'),
-        #                eval_returns,
-        #                fmt=['%d', '%.1f'])
+        if i % params['eval_interval'] == 0:
+            eval_stats = evaluate(agent, eval_env, params['eval_episodes'])
+
+            for k, v in eval_stats.items():
+                summary_writer.add_scalar(f'evaluation/average_{k}s', v,
+                                          info['total']['timesteps'])
+            summary_writer.flush()
+
+            eval_returns.append(
+                (info['total']['timesteps'], eval_stats['return']))
+            # np.savetxt(os.path.join(FLAGS.save_dir, f'{FLAGS.seed}.txt'),
+            #            eval_returns,
+            #            fmt=['%d', '%.1f'])
 
 
 if __name__ == "__main__":

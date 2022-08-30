@@ -46,15 +46,6 @@ def update_critic(actor: TrainState,
     return critic.apply_gradients(grads=grads)
 
 
-# state = TrainState.create(
-#           apply_fn=model.apply,
-#           params=variables['params'],
-#           tx=tx)
-#       grad_fn = jax.grad(make_loss_fn(state.apply_fn))
-#       for batch in data:
-#         grads = grad_fn(state.params, batch)
-#         state = state.apply_gradients(grads=grads)
-
 def actor_loss_fn(actor: TrainState,
                   actor_params,
                   critic: TrainState,
@@ -100,7 +91,7 @@ class TD3Learner:
                  hidden_dims: Sequence[int] = (256, 256),
                  discount: float = 0.99,
                  tau: float = 0.005,
-                 target_update_period: int = 1,
+                 target_update_period: int = 2,
                  exploration_noise: float = 0.1):
         action_dim = actions.shape[-1]
 
