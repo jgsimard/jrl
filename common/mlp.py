@@ -4,9 +4,11 @@ from flax import linen as nn
 import jax.numpy as jnp
 
 
+# kernel_init=nn.initializers.he_uniform()
+
 def dense_layer(x, size, activation, dropout_rate=0.0, training=True, layer_norm=False):
     # x = nn.Dense(size, kernel_init=nn.initializers.xavier_uniform())(x)
-    x = nn.Dense(size, kernel_init=nn.initializers.he_uniform())(x)
+    x = nn.Dense(size)(x)
 
     if dropout_rate > 0:
         x = nn.Dropout(rate=dropout_rate)(x, deterministic=not training)

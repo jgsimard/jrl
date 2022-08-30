@@ -30,8 +30,7 @@ def critic_loss_fn(actor_target: TrainState,
     # targets
     # noisy actions
     next_actions = actor_target.apply_fn(actor_target.params, batch.next_observations)
-    rng, key_noise = jax.random.split(rng)
-    noise = jnp.clip(jax.random.normal(key_noise, next_actions.shape) * policy_noise,
+    noise = jnp.clip(jax.random.normal(rng, next_actions.shape) * policy_noise,
                      -noise_clip,
                      noise_clip)
     next_actions = jnp.clip(next_actions + noise, -1, 1)
@@ -46,7 +45,7 @@ def critic_loss_fn(actor_target: TrainState,
 
     # TODO : use rlax here
     loss = ((q1 - target_q)**2 + (q2 - target_q)**2).mean()
-    return loss, rng
+    return loss
 
 
 def update_critic(actor_target: TrainState,
@@ -57,10 +56,10 @@ def update_critic(actor_target: TrainState,
                   rng: Any,
                   policy_noise: float,
                   noise_clip: float):
-    grad_fn = jax.grad(critic_loss_fn, argnums=2, has_aux=True)
-    grads, rng = grad_fn(actor_target, critic, critic.params, target_critic, data, discount,
+    grad_fn = jax.grad(critic_loss_fn, argnums=2)
+    grads = grad_fn(actor_target, critic, critic.params, target_critic, data, discount,
                          rng, policy_noise, noise_clip)
-    return critic.apply_gradients(grads=grads), rng
+    return critic.apply_gradients(grads=grads)
 
 
 def actor_loss_fn(actor: TrainState,
@@ -92,7 +91,7 @@ def _update(actor: TrainState,
             rng: Any,
             policy_noise: float,
             noise_clip: float):
-    new_critic, rng = update_critic(actor_target, critic, critic_target, batch, discount,
+    new_critic = update_critic(actor_target, critic, critic_target, batch, discount,
                                     rng, policy_noise, noise_clip)
 
     if update_target:
@@ -105,7 +104,7 @@ def _update(actor: TrainState,
         new_critic_target = critic_target
         new_actor_target = actor_target
 
-    return new_actor, new_actor_target, new_critic, new_critic_target, rng
+    return new_actor, new_actor_target, new_critic, new_critic_target
 
 
 class TD3Learner:
@@ -172,7 +171,8 @@ class TD3Learner:
 
     def update(self, batch):
         update_target = self.step % self.target_update_period == 0
-        self.actor, self.actor_target, self.critic, self.critic_target, self.rng = _update(
+        self.rng, update_key = jax.random.split(self.rng)
+        self.actor, self.actor_target, self.critic, self.critic_target = _update(
             self.actor,
             self.actor_target,
             self.critic,
@@ -181,7 +181,7 @@ class TD3Learner:
             self.tau,
             self.discount,
             update_target,
-            self.rng,
+            update_key,
             self.policy_noise,
             self.noise_clip
         )
