@@ -1,63 +1,60 @@
 import functools
 from typing import Sequence, Any
 
-import jax.random
+import jax
 import numpy as np
 import optax
-
 from flax import linen as nn
-from flax.training import train_state
-from flax.training.train_state import TrainState
 from jax import numpy as jnp
 
-from critics.mlp import NCriticMLP
 from common.mlp import MLP
-from common.utils import soft_update
+from common.types import TrainState
+# from common.utils import soft_target_update
+from critics.mlp import NCriticMLP
 from policies import sample
 
-def critic_loss_fn(actor_target: TrainState,
+
+def critic_loss_fn(actor: TrainState,
                    critic: TrainState,
                    critic_params,
-                   critic_target: TrainState,
                    batch: float,
                    discount: float,
                    rng: Any,
                    policy_noise: float,
                    noise_clip: float):
-    # estimates
-    q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
 
-    # targets
     # noisy actions
-    next_actions = actor_target.apply_fn(actor_target.params, batch.next_observations)
-    noise = jnp.clip(jax.random.normal(rng, next_actions.shape) * policy_noise,
+    next_actions_det = actor.apply_fn(actor.target_params, batch.next_observations)
+    noise = jnp.clip(jax.random.normal(rng, next_actions_det.shape) * policy_noise,
                      -noise_clip,
                      noise_clip)
-    next_actions = jnp.clip(next_actions + noise, -1, 1)
+    next_actions = jnp.clip(next_actions_det + noise, -1, 1)
 
     # twin targets
-    next_q1, next_q2 = critic_target.apply_fn(critic_target.params,
-                                              batch.next_observations,
-                                              next_actions)
+    next_q1, next_q2 = critic.apply_fn(critic.target_params,
+                                       batch.next_observations,
+                                       next_actions)
     next_q = jnp.minimum(next_q1, next_q2)
     # bellman target equation
     target_q = batch.rewards + discount * batch.masks * next_q
+
+    # estimates
+    q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
 
     # TODO : use rlax here
     loss = ((q1 - target_q)**2 + (q2 - target_q)**2).mean()
     return loss
 
 
-def update_critic(actor_target: TrainState,
+def update_critic(actor: TrainState,
                   critic: TrainState,
-                  target_critic: TrainState,
                   data,
                   discount: float,
                   rng: Any,
                   policy_noise: float,
                   noise_clip: float):
     grad_fn = jax.grad(critic_loss_fn, argnums=2)
-    grads = grad_fn(actor_target, critic, critic.params, target_critic, data, discount,
+    grads = grad_fn(actor, critic, critic.params, data, discount,
                          rng, policy_noise, noise_clip)
     return critic.apply_gradients(grads=grads)
 
@@ -81,9 +78,7 @@ def update_actor(actor: TrainState, critic: TrainState, batch):
 
 @functools.partial(jax.jit, static_argnames=('update_target'))
 def _update(actor: TrainState,
-            actor_target: TrainState,
             critic: TrainState,
-            critic_target: TrainState,
             batch,
             tau: float,
             discount: float,
@@ -91,20 +86,25 @@ def _update(actor: TrainState,
             rng: Any,
             policy_noise: float,
             noise_clip: float):
-    new_critic = update_critic(actor_target, critic, critic_target, batch, discount,
+    new_critic = update_critic(actor, critic, batch, discount,
                                     rng, policy_noise, noise_clip)
 
     if update_target:
         new_actor = update_actor(actor, new_critic, batch)
 
-        new_critic_target = soft_update(new_critic, critic_target, tau)
-        new_actor_target = soft_update(new_actor, actor_target, tau)
+        new_actor = new_actor.replace(
+            target_params=optax.incremental_update(new_actor.params, new_actor.target_params, tau)
+        )
+        new_critic = new_critic.replace(
+            target_params=optax.incremental_update(new_critic.params, new_critic.target_params, tau)
+        )
+        # new_actor = soft_target_update(new_actor, tau)
+        # new_critic = soft_target_update(critic, tau)
     else:
         new_actor = actor
-        new_critic_target = critic_target
-        new_actor_target = actor_target
+        new_critic = critic
 
-    return new_actor, new_actor_target, new_critic, new_critic_target
+    return new_actor, new_critic
 
 
 class TD3Learner:
@@ -117,7 +117,7 @@ class TD3Learner:
                  hidden_dims: Sequence[int] = (256, 256),
                  discount: float = 0.99,
                  tau: float = 0.005,
-                 target_update_period: int = 2,
+                 policy_freq: int = 2,
                  exploration_noise: float = 0.1,
                  policy_noise: float = 0.2,
                  noise_clip: float = 0.5):
@@ -125,7 +125,7 @@ class TD3Learner:
 
         self.discount = discount
         self.tau = tau
-        self.target_update_period = target_update_period
+        self.policy_freq = policy_freq
         self.exploration_noise = exploration_noise
         self.policy_noise = policy_noise
         self.noise_clip = noise_clip
@@ -137,46 +137,32 @@ class TD3Learner:
             hidden_dims=hidden_dims,
             output_dim=action_dim,
             output_activation=nn.tanh)
-        actor_params = actor_model.init(actor_key, obs)
-        self.actor = train_state.TrainState.create(
+        self.actor = TrainState.create(
             apply_fn=actor_model.apply,
-            params=actor_params,
+            params=actor_model.init(actor_key, obs),
+            target_params=actor_model.init(actor_key, obs),
             tx=optax.adam(learning_rate=actor_lr)
         )
 
-        actor_target_params = actor_model.init(actor_key, obs)
-        self.actor_target = train_state.TrainState.create(
-            apply_fn=actor_model.apply,
-            params=actor_target_params,
-            tx=optax.identity()
-        )
 
         critc_model = NCriticMLP(hidden_dims=hidden_dims, n_critic=2)
-        critic_params = critc_model.init(critic_key, obs, actions)
-        self.critic = train_state.TrainState.create(
+        self.critic = TrainState.create(
             apply_fn=critc_model.apply,
-            params=critic_params,
+            params=critc_model.init(critic_key, obs, actions),
+            target_params=critc_model.init(critic_key, obs, actions),
             tx=optax.adam(learning_rate=critic_lr)
         )
 
-        critic_target_params = critc_model.init(critic_key, obs, actions)
-        self.critic_target = train_state.TrainState.create(
-            apply_fn=critc_model.apply,
-            params=critic_target_params,
-            tx=optax.identity()
-        )
 
         self.rng = rng
         self.step = 1
 
     def update(self, batch):
-        update_target = self.step % self.target_update_period == 0
+        update_target = self.step % self.policy_freq == 0
         self.rng, update_key = jax.random.split(self.rng)
-        self.actor, self.actor_target, self.critic, self.critic_target = _update(
+        self.actor, self.critic = _update(
             self.actor,
-            self.actor_target,
             self.critic,
-            self.critic_target,
             batch,
             self.tau,
             self.discount,

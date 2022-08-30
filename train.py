@@ -1,6 +1,6 @@
 import os
 
-import warnings # TODO remove this
+import warnings  # TODO remove this
 
 import hydra
 import numpy as np
@@ -13,7 +13,7 @@ from data.replay_buffer import ReplayBuffer
 from common.env.utils import make_env
 from common.evaluation import evaluate
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore")  # TODO remove this
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -28,21 +28,28 @@ def main(cfg: DictConfig) -> None:
     # print(params)
     hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
     exp_path = hydra_cfg['runtime']['output_dir']
-    # video_train_folder = os.path.join(exp_path, "video", "train")
-    # video_eval_folder = os.path.join(exp_path, "video", "eval")
-
-    summary_writer = SummaryWriter(
-        os.path.join(exp_path, "test"))
 
     env_name = params['env_name']
     print(env_name)
-    env = make_env(env_name, params['seed'])
-    eval_env = make_env(env_name, params['seed'] + 69)
+
+    summary_writer = SummaryWriter(
+        os.path.join(exp_path, env_name))
+
+    video_train_folder = os.path.join(exp_path, "video", "train")
+    video_eval_folder = os.path.join(exp_path, "video", "eval")
+    env = make_env(env_name, params['seed'], video_train_folder)
+    eval_env = make_env(env_name, params['seed'] + 69, video_eval_folder)
+
+    # env = make_env(env_name, params['seed'])
+    # eval_env = make_env(env_name, params['seed'] + 69)
 
     agent = TD3Learner(
         params['seed'],
         env.observation_space.sample()[np.newaxis],
-        env.action_space.sample()[np.newaxis]
+        env.action_space.sample()[np.newaxis],
+        exploration_noise=params['exploration_noise'],
+        policy_noise=params['exploration_noise'],
+        noise_clip=params['noise_clip']
     )
     replay_buffer = ReplayBuffer(env.observation_space,
                                  env.action_space,
@@ -50,7 +57,7 @@ def main(cfg: DictConfig) -> None:
     eval_returns = []
     done = False
     observation = env.reset()
-    print(observation, type(observation), observation.shape)
+    print("observation", type(observation), observation.shape)
 
     for i in tqdm.tqdm(range(1, params['max_steps'] + 1),
                        smoothing=0.1,
@@ -66,8 +73,7 @@ def main(cfg: DictConfig) -> None:
         else:
             mask = 0.0
 
-        replay_buffer.insert(observation, action, reward, mask, float(done),
-                             next_obs)
+        replay_buffer.insert(observation, action, reward, mask, float(done), next_obs)
         observation = next_obs
 
         if i >= params['start_training']:
@@ -96,4 +102,10 @@ def main(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
+    # # force jax to be on the cpu!
+    # jax.config.update('jax_platform_name', 'cpu')
+
+    # because of my small gpu
+    os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+
     main()
