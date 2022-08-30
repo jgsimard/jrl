@@ -105,6 +105,7 @@ disable=raw-checker-failed,
         bare-except,
         too-few-public-methods,
         too-many-branches,
+        import-error
 #        too-many-statements,
 #        duplicate-code
 
