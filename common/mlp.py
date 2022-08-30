@@ -5,7 +5,9 @@ import jax.numpy as jnp
 
 
 def dense_layer(x, size, activation, dropout_rate=0.0, training=True, layer_norm=False):
-    x = nn.Dense(size, kernel_init=nn.initializers.xavier_uniform())(x)
+    # x = nn.Dense(size, kernel_init=nn.initializers.xavier_uniform())(x)
+    x = nn.Dense(size, kernel_init=nn.initializers.he_uniform())(x)
+
     if dropout_rate > 0:
         x = nn.Dropout(rate=dropout_rate)(x, deterministic=not training)
     if layer_norm:
@@ -18,7 +20,7 @@ def dense_layer(x, size, activation, dropout_rate=0.0, training=True, layer_norm
 class MLP(nn.Module):
     hidden_dims: Sequence[int]
     output_dim: int
-    activations: Callable = nn.silu
+    activations: Callable = nn.relu
     output_activation: Union[Callable, None] = None
     layer_norm: bool = False
     dropout_rate: float = 0.0

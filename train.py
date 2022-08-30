@@ -47,7 +47,7 @@ def main(cfg: DictConfig) -> None:
     replay_buffer = ReplayBuffer(env.observation_space,
                                  env.action_space,
                                  params['replay_buffer_size'])
-    eval_returns =[]
+    eval_returns = []
     done = False
     observation = env.reset()
     print(observation, type(observation), observation.shape)

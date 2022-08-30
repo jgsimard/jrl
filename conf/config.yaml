@@ -9,9 +9,13 @@ batch_size: 256
 updates_per_step: 1
 max_steps: 1000000
 replay_buffer_size: 1000000
-start_training: 5000
+start_training: 25000
 tqdm: True
 save_video: False
 track: False
 wandb_project_name: "jrl"
 wandb_entity: ""
+
+
+noise_clip: 0.5
+exploration_noise: 0.1
