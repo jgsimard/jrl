@@ -12,16 +12,6 @@ from agents.td3 import TD3Learner
 from data.replay_buffer import ReplayBuffer
 
 
-# state = TrainState.create(
-#           apply_fn=model.apply,
-#           params=variables['params'],
-#           tx=tx)
-#       grad_fn = jax.grad(make_loss_fn(state.apply_fn))
-#       for batch in data:
-#         grads = grad_fn(state.params, batch)
-#         state = state.apply_gradients(grads=grads)
-
-
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
     """
@@ -31,19 +21,17 @@ def main(cfg: DictConfig) -> None:
     params = vars(cfg)
     for key, value in cfg.items():
         params[key] = value
-    print(params)
+    # print(params)
+    hydra_cfg = hydra.core.hydra_config.HydraConfig.get()
+    exp_path = hydra_cfg['runtime']['output_dir']
+    print(os.getcwd())
+
 
     summary_writer = SummaryWriter(
-        os.path.join(os.getcwd(), "test"))
+        os.path.join(exp_path, "test"))
 
     # env = envpool.make_gym(params['env_name'], num_envs=1)
-    print("XXXXXXXXx")
-    print(params['env_name'])
-    print()
-    # doesnt work for some reason
     env = gym.make(params['env_name'])
-    # env = gym.make('Pendulum-v1')
-
 
     agent = TD3Learner(
         params['seed'],

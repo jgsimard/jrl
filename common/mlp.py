@@ -1,6 +1,7 @@
 from typing import Sequence, Callable, Union
 
 from flax import linen as nn
+import jax.numpy as jnp
 
 
 def dense_layer(x, size, activation, dropout_rate=0.0, training=True, layer_norm=False):
@@ -23,7 +24,7 @@ class MLP(nn.Module):
     dropout_rate: float = 0.0
 
     @nn.compact
-    def __call__(self, x, training=False):
+    def __call__(self, x: jnp.ndarray, training: bool = False):
         for size in self.hidden_dims:
             x = dense_layer(x, size, self.activations, self.dropout_rate, training, self.layer_norm)
         x = dense_layer(x, self.output_dim, self.output_activation,
