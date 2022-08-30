@@ -105,9 +105,8 @@ disable=raw-checker-failed,
         bare-except,
         too-few-public-methods,
         too-many-branches,
-        import-error
-#        too-many-statements,
-#        duplicate-code
+        import-error,
+        duplicate-code
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

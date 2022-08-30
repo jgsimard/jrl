@@ -10,9 +10,9 @@ from flax.training import train_state
 from flax.training.train_state import TrainState
 from jax import numpy as jnp
 
-from common.utils import soft_update
 from critics.mlp import NCriticMLP
 from common.mlp import MLP
+from common.utils import soft_update
 
 
 def critic_loss_fn(actor: TrainState,
@@ -28,7 +28,7 @@ def critic_loss_fn(actor: TrainState,
     next_q1, next_q2 = critic_target.apply_fn(batch.next_obs, next_action)
     next_q = jnp.minimum(next_q1, next_q2)
     target_q = batch.reward + discount * batch.mask * next_q
-    # TODO use rlax here
+    # TODO : use rlax here
     loss = ((q1 - target_q)**2 + (q2 - target_q)**2).mean()
     return loss
 
@@ -38,10 +38,14 @@ def update_critic(actor: TrainState,
                   target_critic: TrainState,
                   data,
                   discount: float):
+    # TODO
     return actor + critic + target_critic + data + discount
 
 
-def actor_loss_fn(actor: TrainState, critic: TrainState, params, batch):
+def actor_loss_fn(actor: TrainState,
+                  critic: TrainState,
+                  params,
+                  batch):
     actions = actor.apply_fn(params, batch.obs)
     q1, q2 = critic.apply_fn(batch.obs, actions)
     q = jnp.minimum(q1, q2)
