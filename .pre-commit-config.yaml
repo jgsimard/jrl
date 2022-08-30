@@ -14,7 +14,7 @@ repos:
     hooks:
       - id: pylint
         name: pylint
-        entry: python -m pylint jrl
+        entry: pylint
         language: system
         types: [python]
         always_run: true

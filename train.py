@@ -7,6 +7,7 @@ import tqdm
 from omegaconf import DictConfig, OmegaConf
 from tensorboardX import SummaryWriter
 
+# from evaluation import evaluate
 from agents.td3 import TD3Learner
 from data.replay_buffer import ReplayBuffer
 
@@ -84,6 +85,20 @@ def main(cfg: DictConfig) -> None:
                 for k, v in update_info.items():
                     summary_writer.add_scalar(f'training/{k}', v, i)
                 summary_writer.flush()
+
+        # if i % params['eval_interval'] == 0:
+        #     eval_stats = evaluate(agent, eval_env, params['eval_episodes'])
+        #
+        #     for k, v in eval_stats.items():
+        #         summary_writer.add_scalar(f'evaluation/average_{k}s', v,
+        #                                   info['total']['timesteps'])
+        #     summary_writer.flush()
+        #
+        #     eval_returns.append(
+        #         (info['total']['timesteps'], eval_stats['return']))
+        #     np.savetxt(os.path.join(FLAGS.save_dir, f'{FLAGS.seed}.txt'),
+        #                eval_returns,
+        #                fmt=['%d', '%.1f'])
 
 
 if __name__ == "__main__":
