@@ -5,7 +5,7 @@ import jax
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
 
-from common.types import Params, PRNGKey
+from common.types import Params
 
 tfd = tfp.distributions
 tfb = tfp.bijectors
@@ -14,7 +14,7 @@ tfb = tfp.bijectors
 # TODO : replace tensorflow_probability with distrax
 @functools.partial(jax.jit, static_argnames=('actor_apply_fn', 'distribution'))
 def _sample_actions(
-        rng: PRNGKey,
+        rng,
         actor_apply_fn: Callable[..., Any],
         actor_params: Params,
         observations: np.ndarray,

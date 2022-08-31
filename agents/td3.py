@@ -25,9 +25,6 @@ def critic_loss_fn(actor: TrainState,
 
     # noisy actions
     next_actions_det = actor.apply_fn(actor.target_params, batch.next_observations)
-    # noise = jnp.clip(rlax.add_gaussian_noise(rng, next_actions_det, policy_noise),
-    #                  -noise_clip,
-    #                  noise_clip)
     noise = jnp.clip(jax.random.normal(rng, next_actions_det.shape) * policy_noise,
                      -noise_clip,
                      noise_clip)
@@ -44,20 +41,22 @@ def critic_loss_fn(actor: TrainState,
     # estimates
     q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
 
-    loss = (rlax.l2_loss(q1, target_q) + rlax.l2_loss(q2, target_q)).mean()
+    q1_loss = rlax.l2_loss(q1, target_q).mean()
+    q2_loss = rlax.l2_loss(q2, target_q).mean()
+    loss = q1_loss + q2_loss
     return loss
 
 
 def update_critic(actor: TrainState,
                   critic: TrainState,
-                  data,
+                  batch,
                   discount: float,
                   rng: Any,
                   policy_noise: float,
                   noise_clip: float):
     value_and_grad_fn = jax.value_and_grad(critic_loss_fn, argnums=2)
-    critic_loss, grads = value_and_grad_fn(actor, critic, critic.params, data, discount,
-                         rng, policy_noise, noise_clip)
+    critic_loss, grads = value_and_grad_fn(
+        actor, critic, critic.params, batch, discount, rng, policy_noise, noise_clip)
     return critic.apply_gradients(grads=grads), critic_loss
 
 
@@ -66,11 +65,7 @@ def actor_loss_fn(actor: TrainState,
                   critic: TrainState,
                   batch):
     actions = actor.apply_fn(actor_params, batch.observations)
-    # q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
-    # q = jnp.minimum(q1, q2)
-    # loss = -q.mean()
     q1, _ = critic.apply_fn(critic.params, batch.observations, actions)
-    # q = jnp.minimum(q1, q2)
     loss = -q1.mean()
     return loss
 
@@ -124,7 +119,8 @@ class TD3Learner:
                  policy_freq: int = 2,
                  exploration_noise: float = 0.1,
                  policy_noise: float = 0.2,
-                 noise_clip: float = 0.5):
+                 noise_clip: float = 0.5,
+                 max_grad_norm: float = -1.0):
         action_dim = actions.shape[-1]
 
         self.discount = discount
@@ -133,6 +129,7 @@ class TD3Learner:
         self.exploration_noise = exploration_noise
         self.policy_noise = policy_noise
         self.noise_clip = noise_clip
+        self.max_grad_norm = max_grad_norm
 
         rng = jax.random.PRNGKey(seed)
         self.rng, actor_key, critic_key = jax.random.split(rng, 3)
@@ -186,6 +183,5 @@ class TD3Learner:
             distribution='det')
 
         actions = np.asarray(actions)
-        noise = np.random.normal(0.0, self.exploration_noise * temperature, size=actions.shape)
-        actions = actions + noise
-        return np.clip(actions, -1, 1)
+        noise = np.random.normal(size=actions.shape) * self.exploration_noise * temperature
+        return np.clip(actions + noise, -1.0, 1.0)
