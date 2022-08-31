@@ -1,4 +1,5 @@
 import os
+import random
 
 import warnings  # TODO remove this
 
@@ -40,6 +41,11 @@ def main(cfg: DictConfig) -> None:
     env = make_env(env_name, params['seed'], video_train_folder)
     eval_env = make_env(env_name, params['seed'] + 69, video_eval_folder)
 
+    # seeding
+    np.random.seed(params['seed'])
+    random.seed(params['seed'])
+
+    # agent
     agent = TD3Learner(
         params['seed'],
         env.observation_space.sample()[np.newaxis],
@@ -56,9 +62,9 @@ def main(cfg: DictConfig) -> None:
     observation = env.reset()
     print("observation", type(observation), observation.shape)
 
-    for i in tqdm.tqdm(range(1, params['max_steps'] + 1),
+    for i in (pbar:= tqdm.tqdm(range(1, params['max_steps'] + 1),
                        smoothing=0.1,
-                       disable=not params['tqdm']):
+                       disable=not params['tqdm'])):
         if i < params['start_training']:
             action = env.action_space.sample()
         else:
@@ -75,6 +81,7 @@ def main(cfg: DictConfig) -> None:
 
         if done:
             observation, done = env.reset(), False
+            pbar.set_description(f"Episode return={info['episode']['return']:.2f}")
             for k, v in info['episode'].items():
                 summary_writer.add_scalar(f'training/{k}', v,
                                           info['total']['timesteps'])

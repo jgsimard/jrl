@@ -10,7 +10,7 @@ batch_size: 256
 updates_per_step: 1
 max_steps: 1000000
 replay_buffer_size: 1000000
-start_training: 25000
+start_training: 5000
 tqdm: True
 save_video: False
 track: False
@@ -24,3 +24,8 @@ policy_freq: 2
 policy_noise: 0.2
 noise_clip: 0.5
 exploration_noise: 0.1
+
+# reset interval
+# https://arxiv.org/pdf/2205.07802.pdf
+reset: False
+reset_interval: 200000
