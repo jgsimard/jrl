@@ -9,7 +9,7 @@ import tqdm
 from omegaconf import DictConfig, OmegaConf
 from tensorboardX import SummaryWriter
 
-from agents.td3 import TD3Learner
+from agents.td3 import TD3
 from data.replay_buffer import ReplayBuffer
 from common.env.utils import make_env
 from common.evaluation import evaluate
@@ -46,7 +46,7 @@ def main(cfg: DictConfig) -> None:
     random.seed(params['seed'])
 
     # agent
-    agent = TD3Learner(
+    agent = TD3(
         params['seed'],
         env.observation_space.sample()[np.newaxis],
         env.action_space.sample()[np.newaxis],

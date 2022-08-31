@@ -106,7 +106,7 @@ def _update(actor: TrainState,
     return rng, new_actor, new_critic, {"critic_loss": critic_loss, 'actor_loss': actor_loss}
 
 
-class TD3Learner:
+class TD3:
     def __init__(self,
                  seed: int,
                  obs: jnp.ndarray,
