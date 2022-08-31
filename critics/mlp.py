@@ -37,7 +37,6 @@ class NCriticMLP(nn.Module):
             variable_axes={'params': 0},
             split_rngs={'params': True},
             axis_size=self.n_critic)
-        n_q = n_critic_mlp(self.hidden_dims,
-                           self.layer_norm,
-                           self.dropout_rate)(obs, actions)
-        return n_q
+        return n_critic_mlp(self.hidden_dims,
+                            self.layer_norm,
+                            self.dropout_rate)(obs, actions)

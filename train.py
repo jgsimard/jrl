@@ -35,13 +35,13 @@ def main(cfg: DictConfig) -> None:
     summary_writer = SummaryWriter(
         os.path.join(exp_path, env_name))
 
-    video_train_folder = os.path.join(exp_path, "video", "train")
-    video_eval_folder = os.path.join(exp_path, "video", "eval")
-    env = make_env(env_name, params['seed'], video_train_folder)
-    eval_env = make_env(env_name, params['seed'] + 69, video_eval_folder)
+    # video_train_folder = os.path.join(exp_path, "video", "train")
+    # video_eval_folder = os.path.join(exp_path, "video", "eval")
+    # env = make_env(env_name, params['seed'], video_train_folder)
+    # eval_env = make_env(env_name, params['seed'] + 69, video_eval_folder)
 
-    # env = make_env(env_name, params['seed'])
-    # eval_env = make_env(env_name, params['seed'] + 69)
+    env = make_env(env_name, params['seed'])
+    eval_env = make_env(env_name, params['seed'] + 69)
 
     agent = TD3Learner(
         params['seed'],
@@ -76,6 +76,17 @@ def main(cfg: DictConfig) -> None:
         replay_buffer.insert(observation, action, reward, mask, float(done), next_obs)
         observation = next_obs
 
+        if done:
+            observation, done = env.reset(), False
+            for k, v in info['episode'].items():
+                summary_writer.add_scalar(f'training/{k}', v,
+                                          info['total']['timesteps'])
+
+            if 'is_success' in info:
+                summary_writer.add_scalar('training/success',
+                                          info['is_success'],
+                                          info['total']['timesteps'])
+
         if i >= params['start_training']:
             for _ in range(params['updates_per_step']):
                 batch = replay_buffer.sample(params['batch_size'])
@@ -96,9 +107,6 @@ def main(cfg: DictConfig) -> None:
 
             eval_returns.append(
                 (info['total']['timesteps'], eval_stats['return']))
-            # np.savetxt(os.path.join(FLAGS.save_dir, f'{FLAGS.seed}.txt'),
-            #            eval_returns,
-            #            fmt=['%d', '%.1f'])
 
 
 if __name__ == "__main__":

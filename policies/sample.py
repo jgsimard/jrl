@@ -1,21 +1,22 @@
 import functools
-from typing import Any, Callable, Tuple
+from typing import Any, Callable
 
 import jax
-import jax.numpy as jnp
 import numpy as np
 from tensorflow_probability.substrates import jax as tfp
+
+from common.types import Params
 
 tfd = tfp.distributions
 tfb = tfp.bijectors
 
 
-# TODO : replace tensorflow_probability with distrax !!!
+# TODO : replace tensorflow_probability with distrax
 @functools.partial(jax.jit, static_argnames=('actor_apply_fn', 'distribution'))
 def _sample_actions(
         rng,
         actor_apply_fn: Callable[..., Any],
-        actor_params,
+        actor_params: Params,
         observations: np.ndarray,
         temperature: float = 1.0,
         distribution: str = 'log_prob'):
@@ -33,6 +34,6 @@ def sample_actions(
         actor_params: Any,
         observations: np.ndarray,
         temperature: float = 1.0,
-        distribution: str = 'log_prob') -> Tuple[jnp.ndarray]:
+        distribution: str = 'log_prob'):
     return _sample_actions(rng, actor_apply_fn, actor_params, observations,
                            temperature, distribution)
