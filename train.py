@@ -35,13 +35,10 @@ def main(cfg: DictConfig) -> None:
     summary_writer = SummaryWriter(
         os.path.join(exp_path, env_name))
 
-    # video_train_folder = os.path.join(exp_path, "video", "train")
-    # video_eval_folder = os.path.join(exp_path, "video", "eval")
-    # env = make_env(env_name, params['seed'], video_train_folder)
-    # eval_env = make_env(env_name, params['seed'] + 69, video_eval_folder)
-
-    env = make_env(env_name, params['seed'])
-    eval_env = make_env(env_name, params['seed'] + 69)
+    video_train_folder = os.path.join(exp_path, "video", "train") if params['save_video'] else None
+    video_eval_folder = os.path.join(exp_path, "video", "eval") if params['save_video'] else None
+    env = make_env(env_name, params['seed'], video_train_folder)
+    eval_env = make_env(env_name, params['seed'] + 69, video_eval_folder)
 
     agent = TD3Learner(
         params['seed'],
