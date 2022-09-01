@@ -108,7 +108,8 @@ disable=raw-checker-failed,
         import-error,
         redefined-outer-name,
         attribute-defined-outside-init,
-        dangerous-default-value
+        dangerous-default-value,
+        too-many-statements
 
 
 # Enable the message, report, category or checker with the given id(s). You can

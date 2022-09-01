@@ -1,12 +1,17 @@
-import collections
 from typing import Tuple, Union
 
 import numpy as np
 from tqdm import tqdm
+import flax
 
-Batch = collections.namedtuple(
-    'Batch',
-    ['observations', 'actions', 'rewards', 'masks', 'next_observations'])
+
+@flax.struct.dataclass
+class Batch:
+    observations: np.ndarray
+    actions: np.ndarray
+    rewards: np.ndarray
+    masks: np.ndarray
+    next_observations: np.ndarray
 
 
 def split_into_trajectories(observations, actions, rewards, masks, dones_float,

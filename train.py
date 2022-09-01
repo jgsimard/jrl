@@ -10,6 +10,7 @@ from omegaconf import DictConfig, OmegaConf
 from tensorboardX import SummaryWriter
 
 from agents.td3 import TD3
+from agents.sac import SAC
 from data.replay_buffer import ReplayBuffer
 from common.env.utils import make_env
 from common.evaluation import evaluate
@@ -31,10 +32,12 @@ def main(cfg: DictConfig) -> None:
     exp_path = hydra_cfg['runtime']['output_dir']
 
     env_name = params['env_name']
+    agent_name = params['agent_name']
+
+    print(agent_name)
     print(env_name)
 
-    summary_writer = SummaryWriter(
-        os.path.join(exp_path, env_name))
+    summary_writer = SummaryWriter(os.path.join(exp_path, agent_name, env_name))
 
     video_train_folder = os.path.join(exp_path, "video", "train") if params['save_video'] else None
     video_eval_folder = os.path.join(exp_path, "video", "eval") if params['save_video'] else None
@@ -46,14 +49,28 @@ def main(cfg: DictConfig) -> None:
     random.seed(params['seed'])
 
     # agent
-    agent = TD3(
-        params['seed'],
-        env.observation_space.sample()[np.newaxis],
-        env.action_space.sample()[np.newaxis],
-        exploration_noise=params['exploration_noise'],
-        policy_noise=params['exploration_noise'],
-        noise_clip=params['noise_clip']
-    )
+    if agent_name == 'TD3':
+        agent = TD3(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            actor_lr=params['TD3']['actor_lr'],
+            critic_lr=params['TD3']['critic_lr'],
+            exploration_noise=params['TD3']['exploration_noise'],
+            policy_noise=params['TD3']['exploration_noise'],
+            noise_clip=params['TD3']['noise_clip']
+        )
+    elif agent_name == 'SAC':
+        agent = SAC(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            actor_lr=params['SAC']['actor_lr'],
+            critic_lr=params['SAC']['critic_lr'],
+            temperature_lr=params['SAC']['temperature_lr']
+        )
+    else:
+        raise NotImplementedError(f"Agent {agent_name} not implemented yet")
     replay_buffer = ReplayBuffer(env.observation_space,
                                  env.action_space,
                                  params['replay_buffer_size'])
@@ -70,6 +87,9 @@ def main(cfg: DictConfig) -> None:
         else:
             action = agent.sample_actions(observation)
         next_obs, reward, done, info = env.step(action)
+
+        if env_name == "MountainCarContinuous-v0":
+            reward = reward + 13 * np.abs(next_obs[1])
 
         if not done or 'TimeLimit.truncated' in info:
             mask = 1.0
