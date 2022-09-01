@@ -11,7 +11,7 @@ Implement as many RL algorithms as possible in JAX
 ### Continuous Control
 - [ ] DDPG (https://arxiv.org/pdf/1509.02971.pdf)
 - [x] TD3 (https://proceedings.mlr.press/v80/fujimoto18a.html)
-- [ ] SAC (https://arxiv.org/pdf/1801.01290)
+- [x] SAC (https://arxiv.org/pdf/1801.01290)
 - [ ] REDQ (http://arxiv.org/abs/2101.05982)
 - [ ] DRoQ (http://arxiv.org/abs/2110.02034)
 ### Model Based
