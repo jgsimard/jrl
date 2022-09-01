@@ -20,7 +20,7 @@ grad_norm_clipping: 10.0
 
 
 # Agent specific parameters
-agent_name: 'SAC'
+agent_name: 'TD3'
 
 TD3:
   policy_freq: 2

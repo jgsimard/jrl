@@ -2,12 +2,8 @@ from typing import Optional, Sequence
 
 import flax.linen as nn
 import jax.numpy as jnp
-from tensorflow_probability.substrates import jax as tfp
+import distrax
 from common.mlp import MLP
-
-tfd = tfp.distributions
-tfb = tfp.bijectors
-
 
 
 class NormalTanhPolicy(nn.Module):
@@ -25,7 +21,7 @@ class NormalTanhPolicy(nn.Module):
     def __call__(self,
                  observations: jnp.ndarray,
                  temperature: float = 1.0,
-                 training: bool = False) -> tfd.Distribution:
+                 training: bool = False) -> distrax.Distribution:
         outputs = MLP(self.hidden_dims[:-1],
                       output_dim=self.hidden_dims[-1],
                       output_activation=nn.relu,
@@ -51,14 +47,14 @@ class NormalTanhPolicy(nn.Module):
 
         log_stds = jnp.clip(log_stds, self.log_std_min, self.log_std_max)
 
-        base_dist = tfd.MultivariateNormalDiag(
+        base_dist = distrax.MultivariateNormalDiag(
             loc=means,
             scale_diag=jnp.exp(log_stds) * temperature
         )
 
         if self.tanh_squash_distribution:
-            return tfd.TransformedDistribution(
+            return distrax.Transformed(
                 distribution=base_dist,
-                bijector=tfb.Tanh()
+                bijector=distrax.Block(distrax.Tanh(), ndims=1)
             )
         return base_dist

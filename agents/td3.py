@@ -45,7 +45,10 @@ def critic_loss_fn(actor: TrainState,
     q1_loss = rlax.l2_loss(q1, target_q).mean()
     q2_loss = rlax.l2_loss(q2, target_q).mean()
     loss = q1_loss + q2_loss
-    return loss
+
+    info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
+
+    return loss, info
 
 
 def update_critic(actor: TrainState,
@@ -55,10 +58,10 @@ def update_critic(actor: TrainState,
                   rng: Any,
                   policy_noise: float,
                   noise_clip: float):
-    value_and_grad_fn = jax.value_and_grad(critic_loss_fn, argnums=2)
-    critic_loss, grads = value_and_grad_fn(
+    value_and_grad_fn = jax.value_and_grad(critic_loss_fn, argnums=2, has_aux=True)
+    (_, info), grads = value_and_grad_fn(
         actor, critic, critic.params, batch, discount, rng, policy_noise, noise_clip)
-    return critic.apply_gradients(grads=grads), critic_loss
+    return critic.apply_gradients(grads=grads), info
 
 
 def actor_loss_fn(actor: TrainState,
@@ -70,13 +73,14 @@ def actor_loss_fn(actor: TrainState,
     q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
     q = jnp.minimum(q1, q2)
     loss = -q.mean()
-    return loss
+    info = {'actor_loss': loss}
+    return loss, info
 
 
 def update_actor(actor: TrainState, critic: TrainState, batch: Batch):
-    value_and_grad_fn = jax.value_and_grad(actor_loss_fn, argnums=1)
-    actor_loss, grads = value_and_grad_fn(actor, actor.params, critic,  batch)
-    return actor.apply_gradients(grads=grads), actor_loss
+    value_and_grad_fn = jax.value_and_grad(actor_loss_fn, argnums=1, has_aux=True)
+    (_, info), grads = value_and_grad_fn(actor, actor.params, critic,  batch)
+    return actor.apply_gradients(grads=grads), info
 
 
 @functools.partial(jax.jit, static_argnames=('update_target'))
@@ -90,11 +94,11 @@ def _update(actor: TrainState,
             policy_noise: float,
             noise_clip: float):
     rng, key = jax.random.split(rng)
-    new_critic, critic_loss = update_critic(actor, critic, batch, discount,
+    new_critic, critic_info = update_critic(actor, critic, batch, discount,
                                     key, policy_noise, noise_clip)
 
     if update_target:
-        new_actor, actor_loss = update_actor(actor, new_critic, batch)
+        new_actor, actor_info = update_actor(actor, new_critic, batch)
 
         new_actor = new_actor.replace(
             target_params=optax.incremental_update(new_actor.params, new_actor.target_params, tau)
@@ -103,10 +107,11 @@ def _update(actor: TrainState,
             target_params=optax.incremental_update(new_critic.params, new_critic.target_params, tau)
         )
     else:
-        actor_loss = jnp.empty_like(critic_loss)
+        actor_info = {}
         new_actor = actor
         new_critic = critic
-    return rng, new_actor, new_critic, {"critic_loss": critic_loss, 'actor_loss': actor_loss}
+    info = {**critic_info, **actor_info}
+    return rng, new_actor, new_critic, info
 
 
 class TD3:
