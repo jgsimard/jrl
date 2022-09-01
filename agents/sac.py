@@ -35,79 +35,58 @@ def update_temperature(temperature: TrainState, entropy: float, target_entropy: 
     return temperature.apply_gradients(grads=grads), info
 
 
-def critic_loss_fn(key: Any,
-                   actor: TrainState,
-                   critic: TrainState,
-                   critic_params,
-                   temperature: TrainState,
-                   batch: Batch,
-                   discount: float,
-                   backup_entropy: bool):
-    # noisy actions
-    dist = actor.apply_fn(actor.params, batch.next_observations)
-    next_actions = dist.sample(seed=key)
+def update_critic(key: Any, actor: TrainState, critic: TrainState, temperature: TrainState,
+                  batch: Batch, discount: float, backup_entropy: bool):
+    def critic_loss_fn(critic_params):
+        # noisy actions
+        dist = actor.apply_fn(actor.params, batch.next_observations)
+        next_actions = dist.sample(seed=key)
 
-    # twin targets
-    next_q1, next_q2 = critic.apply_fn(critic.target_params,
-                                       batch.next_observations,
-                                       next_actions)
-    next_q = jnp.minimum(next_q1, next_q2)
+        # twin targets
+        next_q1, next_q2 = critic.apply_fn(critic.target_params,
+                                           batch.next_observations,
+                                           next_actions)
+        next_q = jnp.minimum(next_q1, next_q2)
 
-    # bellman target equation
-    target_q = batch.rewards + discount * batch.masks * next_q
+        # bellman target equation
+        target_q = batch.rewards + discount * batch.masks * next_q
 
-    # entropy
-    if backup_entropy:
-        next_log_probs = dist.log_prob(next_actions)
-        target_q -= discount * \
-                    batch.masks * \
-                    temperature.apply_fn(temperature.params) * \
-                    next_log_probs
+        # entropy
+        if backup_entropy:
+            next_log_probs = dist.log_prob(next_actions)
+            target_q -= discount * \
+                        batch.masks * \
+                        temperature.apply_fn(temperature.params) * \
+                        next_log_probs
 
-    # estimates
-    q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
+        # estimates
+        q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
 
-    q1_loss = rlax.l2_loss(q1, target_q).mean()
-    q2_loss = rlax.l2_loss(q2, target_q).mean()
-    loss = q1_loss + q2_loss
+        q1_loss = rlax.l2_loss(q1, target_q).mean()
+        q2_loss = rlax.l2_loss(q2, target_q).mean()
+        loss = q1_loss + q2_loss
 
-    info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
+        info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
 
-    return loss, info
+        return loss, info
 
-
-def update_critic(key: Any,
-                  actor: TrainState,
-                  critic: TrainState,
-                  temperature: TrainState,
-                  batch: Batch,
-                  discount: float,
-                  backup_entropy: bool):
-    value_and_grad_fn = jax.value_and_grad(critic_loss_fn, argnums=3, has_aux=True)
-    (_, info), grads = value_and_grad_fn(
-        key, actor, critic, critic.params, temperature, batch, discount, backup_entropy)
+    value_and_grad_fn = jax.value_and_grad(critic_loss_fn, has_aux=True)
+    (_, info), grads = value_and_grad_fn(critic.params)
     return critic.apply_gradients(grads=grads), info
 
 
-def actor_loss_fn(key,
-                  actor: TrainState,
-                  actor_params,
-                  critic: TrainState,
-                  temperature: TrainState,
-                  batch: Batch):
-    dist_actions = actor.apply_fn(actor_params, batch.observations)
-    actions = dist_actions.sample(seed=key)
-    q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
-    q = jnp.minimum(q1, q2)
-    log_probs = dist_actions.log_prob(actions)
-    loss = (log_probs * temperature.apply_fn(temperature.params) - q).mean()
-    info = {'actor_loss': loss, 'entropy': -log_probs.mean()}
-    return loss, info
-
-
 def update_actor(key, actor: TrainState, critic: TrainState, temperature: TrainState, batch):
-    value_and_grad_fn = jax.value_and_grad(actor_loss_fn, argnums=2, has_aux=True)
-    (_, info), grads = value_and_grad_fn(key, actor, actor.params, critic, temperature, batch)
+    def actor_loss_fn(actor_params):
+        dist_actions = actor.apply_fn(actor_params, batch.observations)
+        actions = dist_actions.sample(seed=key)
+        q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
+        q = jnp.minimum(q1, q2)
+        log_probs = dist_actions.log_prob(actions)
+        loss = (log_probs * temperature.apply_fn(temperature.params) - q).mean()
+        info = {'actor_loss': loss, 'entropy': -log_probs.mean()}
+        return loss, info
+    value_and_grad_fn = jax.value_and_grad(actor_loss_fn, has_aux=True)
+    (_, info), grads = value_and_grad_fn(actor.params)
     return actor.apply_gradients(grads=grads), info
 
 

@@ -14,42 +14,6 @@ from critics.mlp import NCriticMLP
 from policies import sample
 
 
-def critic_loss_fn(actor: TrainState,
-                   critic: TrainState,
-                   critic_params,
-                   batch: Batch,
-                   discount: float,
-                   rng: Any,
-                   policy_noise: float,
-                   noise_clip: float):
-
-    # noisy actions
-    next_actions_det = actor.apply_fn(actor.target_params, batch.next_observations)
-    noise = jnp.clip(jax.random.normal(rng, next_actions_det.shape) * policy_noise,
-                     -noise_clip,
-                     noise_clip)
-    next_actions = jnp.clip(next_actions_det + noise, -1.0, 1.0)
-
-    # twin targets
-    next_q1, next_q2 = critic.apply_fn(critic.target_params,
-                                       batch.next_observations,
-                                       next_actions)
-    next_q = jnp.minimum(next_q1, next_q2)
-    # bellman target equation
-    target_q = batch.rewards + discount * batch.masks * next_q
-
-    # estimates
-    q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
-
-    q1_loss = rlax.l2_loss(q1, target_q).mean()
-    q2_loss = rlax.l2_loss(q2, target_q).mean()
-    loss = q1_loss + q2_loss
-
-    info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
-
-    return loss, info
-
-
 def update_critic(actor: TrainState,
                   critic: TrainState,
                   batch: Batch,
@@ -57,28 +21,49 @@ def update_critic(actor: TrainState,
                   rng: Any,
                   policy_noise: float,
                   noise_clip: float):
-    value_and_grad_fn = jax.value_and_grad(critic_loss_fn, argnums=2, has_aux=True)
-    (_, info), grads = value_and_grad_fn(
-        actor, critic, critic.params, batch, discount, rng, policy_noise, noise_clip)
+    def critic_loss_fn(critic_params):
+        # noisy actions
+        next_actions_det = actor.apply_fn(actor.target_params, batch.next_observations)
+        noise = jnp.clip(jax.random.normal(rng, next_actions_det.shape) * policy_noise,
+                         -noise_clip,
+                         noise_clip)
+        next_actions = jnp.clip(next_actions_det + noise, -1.0, 1.0)
+
+        # twin targets
+        next_q1, next_q2 = critic.apply_fn(critic.target_params,
+                                           batch.next_observations,
+                                           next_actions)
+        next_q = jnp.minimum(next_q1, next_q2)
+        # bellman target equation
+        target_q = batch.rewards + discount * batch.masks * next_q
+
+        # estimates
+        q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
+
+        q1_loss = rlax.l2_loss(q1, target_q).mean()
+        q2_loss = rlax.l2_loss(q2, target_q).mean()
+        loss = q1_loss + q2_loss
+
+        info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
+
+        return loss, info
+
+    value_and_grad_fn = jax.value_and_grad(critic_loss_fn, has_aux=True)
+    (_, info), grads = value_and_grad_fn(critic.params)
     return critic.apply_gradients(grads=grads), info
 
 
-def actor_loss_fn(actor: TrainState,
-                  actor_params: Params,
-                  critic: TrainState,
-                  batch: Batch):
-    actions = actor.apply_fn(actor_params, batch.observations)
-    # use SAC trick of using the min here
-    q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
-    q = jnp.minimum(q1, q2)
-    loss = -q.mean()
-    info = {'actor_loss': loss}
-    return loss, info
-
-
 def update_actor(actor: TrainState, critic: TrainState, batch: Batch):
-    value_and_grad_fn = jax.value_and_grad(actor_loss_fn, argnums=1, has_aux=True)
-    (_, info), grads = value_and_grad_fn(actor, actor.params, critic,  batch)
+    def actor_loss_fn(actor_params: Params):
+        actions = actor.apply_fn(actor_params, batch.observations)
+        # use SAC trick of using the min here
+        q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
+        q = jnp.minimum(q1, q2)
+        loss = -q.mean()
+        info = {'actor_loss': loss}
+        return loss, info
+    value_and_grad_fn = jax.value_and_grad(actor_loss_fn, has_aux=True)
+    (_, info), grads = value_and_grad_fn(actor.params)
     return actor.apply_gradients(grads=grads), info
 
 
@@ -162,6 +147,7 @@ class TD3:
 
         self.step = 0
 
+    @functools.partial(jax.jit, static_argnames=('update_target'))
     def update(self, batch: Batch):
         update_target = self.step % self.policy_freq == 0
         self.rng, self.actor, self.critic, info = _update(
