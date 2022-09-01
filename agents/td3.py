@@ -65,8 +65,10 @@ def actor_loss_fn(actor: TrainState,
                   critic: TrainState,
                   batch):
     actions = actor.apply_fn(actor_params, batch.observations)
-    q1, _ = critic.apply_fn(critic.params, batch.observations, actions)
-    loss = -q1.mean()
+    # use SAC trick of using the min here
+    q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
+    q = jnp.minimum(q1, q2)
+    loss = -q.mean()
     return loss
 
 
