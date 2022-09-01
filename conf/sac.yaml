@@ -1,0 +1,15 @@
+defaults:
+  - config
+
+agent_name: 'SAC'
+
+SAC:
+  policy_freq: 1
+  target_entropy: None
+  backup_entropy: 0.5
+  init_temperature: 1.0
+  init_mean: None
+  policy_final_fc_init_scale: 1.0
+  actor_lr:  0.0003
+  critic_lr: 0.0003
+  temperature_lr: 0.0003

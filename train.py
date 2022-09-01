@@ -11,11 +11,22 @@ from tensorboardX import SummaryWriter
 
 from agents.td3 import TD3
 from agents.sac import SAC
+from agents.drq import DrQ
 from data.replay_buffer import ReplayBuffer
 from common.env.utils import make_env
 from common.evaluation import evaluate
 
 warnings.filterwarnings("ignore")  # TODO remove this
+
+
+PLANET_ACTION_REPEAT = {
+    'cartpole-swingup': 8,
+    'reacher-easy': 4,
+    'cheetah-run': 4,
+    'finger-spin': 2,
+    'ball_in_cup-catch': 4,
+    'walker-walk': 2
+}
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -39,10 +50,37 @@ def main(cfg: DictConfig) -> None:
 
     summary_writer = SummaryWriter(os.path.join(exp_path, agent_name, env_name))
 
+    # video folder
     video_train_folder = os.path.join(exp_path, "video", "train") if params['save_video'] else None
     video_eval_folder = os.path.join(exp_path, "video", "eval") if params['save_video'] else None
-    env = make_env(env_name, params['seed'], video_train_folder)
-    eval_env = make_env(env_name, params['seed'] + 69, video_eval_folder)
+
+    # action repeat
+    if params['action_repeat'] is not None:
+        action_repeat = params['action_repeat']
+    else:
+        action_repeat = PLANET_ACTION_REPEAT.get(env_name, 2)
+
+    # pixels
+    if params['pixels']:
+        gray_scale = params['gray_scale']
+        image_size = params['image_size']
+
+        print(f"action_repeat={action_repeat}")
+
+        def make_env_(env_name, seed, video_folder):
+            return make_env(env_name,
+                            seed,
+                            video_folder,
+                            action_repeat=action_repeat,
+                            image_size=image_size,
+                            frame_stack=3,
+                            from_pixels=True,
+                            gray_scale=gray_scale)
+    else:
+        make_env_ = make_env
+
+    env = make_env_(env_name, params['seed'], video_train_folder)
+    eval_env = make_env_(env_name, params['seed'] + 69, video_eval_folder)
 
     # seeding
     np.random.seed(params['seed'])
@@ -69,17 +107,32 @@ def main(cfg: DictConfig) -> None:
             critic_lr=params['SAC']['critic_lr'],
             temperature_lr=params['SAC']['temperature_lr']
         )
+    elif agent_name == 'DrQ':
+        agent = DrQ(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            hidden_dims=params['DrQ']['hidden_dims'],
+            cnn_features=params['DrQ']['cnn_features'],
+            cnn_strides=params['DrQ']['cnn_strides'],
+            cnn_padding=params['DrQ']['cnn_padding'],
+            latent_dim=params['DrQ']['latent_dim'],
+            actor_lr=params['DrQ']['actor_lr'],
+            critic_lr=params['DrQ']['critic_lr'],
+            temperature_lr=params['DrQ']['temperature_lr']
+        )
+
     else:
         raise NotImplementedError(f"Agent {agent_name} not implemented yet")
     replay_buffer = ReplayBuffer(env.observation_space,
                                  env.action_space,
-                                 params['replay_buffer_size'])
+                                 params['replay_buffer_size'] or params['max_steps'] // action_repeat)
     eval_returns = []
     done = False
     observation = env.reset()
     print("observation", type(observation), observation.shape)
 
-    for i in (pbar:= tqdm.tqdm(range(1, params['max_steps'] + 1),
+    for i in (pbar:= tqdm.tqdm(range(1, params['max_steps'] // action_repeat + 1),
                        smoothing=0.1,
                        disable=not params['tqdm'])):
         if i < params['start_training']:

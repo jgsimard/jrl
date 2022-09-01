@@ -17,29 +17,12 @@ track: False
 wandb_project_name: "jrl"
 wandb_entity: ""
 grad_norm_clipping: 10.0
-
+action_repeat: 1
+pixels: False
 
 # Agent specific parameters
-agent_name: 'TD3'
+agent_name: 'No name'
 
-TD3:
-  policy_freq: 2
-  policy_noise: 0.2
-  noise_clip: 0.5
-  exploration_noise: 0.1
-  actor_lr:  0.0003
-  critic_lr: 0.0003
-
-SAC:
-  policy_freq: 1
-  target_entropy: None
-  backup_entropy: 0.5
-  init_temperature: 1.0
-  init_mean: None
-  policy_final_fc_init_scale: 1.0
-  actor_lr:  0.0003
-  critic_lr: 0.0003
-  temperature_lr: 0.0003
 
 # reset interval
 # https://arxiv.org/pdf/2205.07802.pdf
