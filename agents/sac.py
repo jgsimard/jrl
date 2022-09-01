@@ -131,7 +131,7 @@ def _update(rng: Any,
             target_params=optax.incremental_update(new_critic.params, new_critic.target_params, tau)
         )
     else:
-        new_critic = critic
+        new_critic = new_critic
 
     new_actor, actor_info = update_actor(key_actor, actor, new_critic, temperature, batch)
     new_temperature, temperature_info = update_temperature(temperature,
