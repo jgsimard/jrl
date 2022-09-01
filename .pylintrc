@@ -109,7 +109,8 @@ disable=raw-checker-failed,
         redefined-outer-name,
         attribute-defined-outside-init,
         dangerous-default-value,
-        too-many-statements
+        too-many-statements,
+        duplicate-code
 
 
 # Enable the message, report, category or checker with the given id(s). You can

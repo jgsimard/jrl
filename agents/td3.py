@@ -4,13 +4,12 @@ from typing import Sequence, Any
 import jax
 import numpy as np
 import optax
+import rlax
 from flax import linen as nn
 from jax import numpy as jnp
-import rlax
 
 from common.mlp import MLP
-from common.types import TrainState, Params
-from data.dataset import Batch
+from common.types import TrainState, Params, Batch
 from critics.mlp import NCriticMLP
 from policies import sample
 

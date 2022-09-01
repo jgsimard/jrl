@@ -2,16 +2,8 @@ from typing import Tuple, Union
 
 import numpy as np
 from tqdm import tqdm
-import flax
 
-
-@flax.struct.dataclass
-class Batch:
-    observations: np.ndarray
-    actions: np.ndarray
-    rewards: np.ndarray
-    masks: np.ndarray
-    next_observations: np.ndarray
+from common.types import Batch
 
 
 def split_into_trajectories(observations, actions, rewards, masks, dones_float,

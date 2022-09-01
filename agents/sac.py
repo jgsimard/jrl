@@ -4,15 +4,14 @@ from typing import Sequence, Any, Optional
 import jax
 import numpy as np
 import optax
+import rlax
 from flax import linen as nn
 from jax import numpy as jnp
-import rlax
 
-from data.dataset import Batch
-from common.types import TrainState
+from common.types import TrainState, Batch
 from critics.mlp import NCriticMLP
-from policies.sample import sample_actions
 from policies.normal_tanh import NormalTanhPolicy
+from policies.sample import sample_actions
 
 
 class Temperature(nn.Module):
@@ -57,6 +56,7 @@ def critic_loss_fn(key: Any,
     # bellman target equation
     target_q = batch.rewards + discount * batch.masks * next_q
 
+    # entropy
     if backup_entropy:
         next_log_probs = dist.log_prob(next_actions)
         target_q -= discount * \
