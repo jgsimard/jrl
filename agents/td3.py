@@ -9,7 +9,8 @@ from jax import numpy as jnp
 import rlax
 
 from common.mlp import MLP
-from common.types import TrainState
+from common.types import TrainState, Params
+from data.dataset import Batch
 from critics.mlp import NCriticMLP
 from policies import sample
 
@@ -17,7 +18,7 @@ from policies import sample
 def critic_loss_fn(actor: TrainState,
                    critic: TrainState,
                    critic_params,
-                   batch: float,
+                   batch: Batch,
                    discount: float,
                    rng: Any,
                    policy_noise: float,
@@ -49,7 +50,7 @@ def critic_loss_fn(actor: TrainState,
 
 def update_critic(actor: TrainState,
                   critic: TrainState,
-                  batch,
+                  batch: Batch,
                   discount: float,
                   rng: Any,
                   policy_noise: float,
@@ -61,9 +62,9 @@ def update_critic(actor: TrainState,
 
 
 def actor_loss_fn(actor: TrainState,
-                  actor_params,
+                  actor_params: Params,
                   critic: TrainState,
-                  batch):
+                  batch: Batch):
     actions = actor.apply_fn(actor_params, batch.observations)
     # use SAC trick of using the min here
     q1, q2 = critic.apply_fn(critic.params, batch.observations, actions)
@@ -72,7 +73,7 @@ def actor_loss_fn(actor: TrainState,
     return loss
 
 
-def update_actor(actor: TrainState, critic: TrainState, batch):
+def update_actor(actor: TrainState, critic: TrainState, batch: Batch):
     value_and_grad_fn = jax.value_and_grad(actor_loss_fn, argnums=1)
     actor_loss, grads = value_and_grad_fn(actor, actor.params, critic,  batch)
     return actor.apply_gradients(grads=grads), actor_loss
@@ -81,7 +82,7 @@ def update_actor(actor: TrainState, critic: TrainState, batch):
 @functools.partial(jax.jit, static_argnames=('update_target'))
 def _update(actor: TrainState,
             critic: TrainState,
-            batch,
+            batch: Batch,
             tau: float,
             discount: float,
             update_target: bool,
@@ -157,7 +158,7 @@ class TD3:
 
         self.step = 0
 
-    def update(self, batch):
+    def update(self, batch: Batch):
         update_target = self.step % self.policy_freq == 0
         self.rng, self.actor, self.critic, info = _update(
             self.actor,
