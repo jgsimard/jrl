@@ -7,7 +7,7 @@ from gym.wrappers.pixel_observation import PixelObservationWrapper
 # TODO : use envpool to make it faster!
 import envpool
 
-from env import wrappers
+from common.env import wrappers
 
 
 def make_env(env_name: str,

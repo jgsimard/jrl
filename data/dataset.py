@@ -6,13 +6,17 @@ from tqdm import tqdm
 from common.types import Batch
 
 
-def split_into_trajectories(observations, actions, rewards, masks, dones_float,
-                            next_observations):
+def split_into_trajectories(
+        observations, actions, rewards, masks, dones_float, next_observations):
     trajs = [[]]
 
     for i in tqdm(range(len(observations))):
-        trajs[-1].append((observations[i], actions[i], rewards[i], masks[i],
-                          dones_float[i], next_observations[i]))
+        trajs[-1].append((observations[i],
+                          actions[i],
+                          rewards[i],
+                          masks[i],
+                          dones_float[i],
+                          next_observations[i]))
         if dones_float[i] == 1.0 and i + 1 < len(observations):
             trajs.append([])
 
@@ -36,16 +40,22 @@ def merge_trajectories(trajs):
             dones_float.append(done)
             next_observations.append(next_obs)
 
-    return np.stack(observations), np.stack(actions), np.stack(
-        rewards), np.stack(masks), np.stack(dones_float), np.stack(
-            next_observations)
+    return np.stack(observations), \
+           np.stack(actions), \
+           np.stack(rewards), \
+           np.stack(masks), \
+           np.stack(dones_float), \
+           np.stack(next_observations)
 
 
 class Dataset:
-
-    def __init__(self, observations: np.ndarray, actions: np.ndarray,
-                 rewards: np.ndarray, masks: np.ndarray,
-                 dones_float: np.ndarray, next_observations: np.ndarray,
+    def __init__(self,
+                 observations: np.ndarray,
+                 actions: np.ndarray,
+                 rewards: np.ndarray,
+                 masks: np.ndarray,
+                 dones_float: np.ndarray,
+                 next_observations: np.ndarray,
                  size: int):
         self.observations = observations
         self.actions = actions
@@ -70,8 +80,10 @@ class Dataset:
         states = []
         if and_action:
             actions = []
-        trajs = split_into_trajectories(self.observations, self.actions,
-                                        self.rewards, self.masks,
+        trajs = split_into_trajectories(self.observations,
+                                        self.actions,
+                                        self.rewards,
+                                        self.masks,
                                         self.dones_float,
                                         self.next_observations)
 
@@ -96,8 +108,10 @@ class Dataset:
         return states
 
     def get_monte_carlo_returns(self, discount) -> np.ndarray:
-        trajs = split_into_trajectories(self.observations, self.actions,
-                                        self.rewards, self.masks,
+        trajs = split_into_trajectories(self.observations,
+                                        self.actions,
+                                        self.rewards,
+                                        self.masks,
                                         self.dones_float,
                                         self.next_observations)
         mc_returns = []

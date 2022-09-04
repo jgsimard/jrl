@@ -1,5 +1,6 @@
 import os
 import random
+import copy
 
 import warnings  # TODO remove this
 
@@ -8,11 +9,13 @@ import numpy as np
 import tqdm
 from omegaconf import DictConfig, OmegaConf
 from tensorboardX import SummaryWriter
+# from dm_env import specs
 
 from agents.td3 import TD3
 from agents.sac import SAC
 from agents.drq import DrQ
 from data.replay_buffer import ReplayBuffer
+# from data.replay_buffer_compressed import ReplayBufferStorage, make_replay_loader
 from common.env.utils import make_env
 from common.evaluation import evaluate
 
@@ -27,6 +30,47 @@ PLANET_ACTION_REPEAT = {
     'ball_in_cup-catch': 4,
     'walker-walk': 2
 }
+
+
+def make_agent(params, env):
+    agent_name = params['agent_name']
+    if agent_name == 'TD3':
+        agent = TD3(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            actor_lr=params['TD3']['actor_lr'],
+            critic_lr=params['TD3']['critic_lr'],
+            exploration_noise=params['TD3']['exploration_noise'],
+            policy_noise=params['TD3']['exploration_noise'],
+            noise_clip=params['TD3']['noise_clip']
+        )
+    elif agent_name == 'SAC':
+        agent = SAC(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            actor_lr=params['SAC']['actor_lr'],
+            critic_lr=params['SAC']['critic_lr'],
+            temperature_lr=params['SAC']['temperature_lr']
+        )
+    elif agent_name == 'DrQ':
+        agent = DrQ(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            hidden_dims=params['DrQ']['hidden_dims'],
+            cnn_features=params['DrQ']['cnn_features'],
+            cnn_strides=params['DrQ']['cnn_strides'],
+            cnn_padding=params['DrQ']['cnn_padding'],
+            latent_dim=params['DrQ']['latent_dim'],
+            actor_lr=params['DrQ']['actor_lr'],
+            critic_lr=params['DrQ']['critic_lr'],
+            temperature_lr=params['DrQ']['temperature_lr']
+        )
+    else:
+        raise NotImplementedError(f"Agent {agent_name} not implemented yet")
+    return agent
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
@@ -65,9 +109,8 @@ def main(cfg: DictConfig) -> None:
         gray_scale = params['gray_scale']
         image_size = params['image_size']
 
-        print(f"action_repeat={action_repeat}")
 
-        def make_env_(env_name, seed, video_folder):
+        def make_env_(env_name, seed, video_folder, envpool):
             return make_env(env_name,
                             seed,
                             video_folder,
@@ -75,7 +118,8 @@ def main(cfg: DictConfig) -> None:
                             image_size=image_size,
                             frame_stack=3,
                             from_pixels=True,
-                            gray_scale=gray_scale)
+                            gray_scale=gray_scale,
+                            use_envpool=envpool)
     else:
         make_env_ = make_env
 
@@ -87,58 +131,42 @@ def main(cfg: DictConfig) -> None:
     random.seed(params['seed'])
 
     # agent
-    if agent_name == 'TD3':
-        agent = TD3(
-            params['seed'],
-            env.observation_space.sample()[np.newaxis],
-            env.action_space.sample()[np.newaxis],
-            actor_lr=params['TD3']['actor_lr'],
-            critic_lr=params['TD3']['critic_lr'],
-            exploration_noise=params['TD3']['exploration_noise'],
-            policy_noise=params['TD3']['exploration_noise'],
-            noise_clip=params['TD3']['noise_clip']
-        )
-    elif agent_name == 'SAC':
-        agent = SAC(
-            params['seed'],
-            env.observation_space.sample()[np.newaxis],
-            env.action_space.sample()[np.newaxis],
-            actor_lr=params['SAC']['actor_lr'],
-            critic_lr=params['SAC']['critic_lr'],
-            temperature_lr=params['SAC']['temperature_lr']
-        )
-    elif agent_name == 'DrQ':
-        agent = DrQ(
-            params['seed'],
-            env.observation_space.sample()[np.newaxis],
-            env.action_space.sample()[np.newaxis],
-            hidden_dims=params['DrQ']['hidden_dims'],
-            cnn_features=params['DrQ']['cnn_features'],
-            cnn_strides=params['DrQ']['cnn_strides'],
-            cnn_padding=params['DrQ']['cnn_padding'],
-            latent_dim=params['DrQ']['latent_dim'],
-            actor_lr=params['DrQ']['actor_lr'],
-            critic_lr=params['DrQ']['critic_lr'],
-            temperature_lr=params['DrQ']['temperature_lr']
-        )
+    agent = make_agent(params, env)
 
+    replay_buffer_type = params['replay_buffer_type']
+    if replay_buffer_type =='basic':
+        replay_buffer_size = params['replay_buffer_size'] or params['max_steps'] // action_repeat
+        replay_buffer = ReplayBuffer(env.observation_space,
+                                     env.action_space,
+                                     replay_buffer_size)
+    # elif replay_buffer_type == 'compressed':
+    #     data_specs = (env.observation_spec(),
+    #                   env.action_spec(),
+    #                   specs.Array((1,), np.float32, 'reward'),
+    #                   specs.Array((1,), np.float32, 'discount'))
+    #
+    #     buffer_path = os.path.join(exp_path, 'buffer')
+    #
+    #     replay_storage = ReplayBufferStorage(data_specs, buffer_path)
+    #     replay_loader = make_replay_loader(
+    #         buffer_path, params['replay_buffer_size'],
+    #         params['batch_size'], params['replay_buffer_num_workers'],
+    #         params['save_snapshot'], params['nstep'], params['discount'])
+    #     _replay_iter = None
     else:
-        raise NotImplementedError(f"Agent {agent_name} not implemented yet")
-    replay_buffer = ReplayBuffer(env.observation_space,
-                                 env.action_space,
-                                 params['replay_buffer_size'] or params['max_steps'] // action_repeat)
+        raise NotImplementedError(f"Replay buffer type {replay_buffer_type} not implemented yet")
     eval_returns = []
     done = False
     observation = env.reset()
-    print("observation", type(observation), observation.shape)
 
-    for i in (pbar:= tqdm.tqdm(range(1, params['max_steps'] // action_repeat + 1),
+    for i in (pbar := tqdm.tqdm(range(1, params['max_steps'] // action_repeat + 1),
                        smoothing=0.1,
                        disable=not params['tqdm'])):
         if i < params['start_training']:
             action = env.action_space.sample()
         else:
             action = agent.sample_actions(observation)
+
         next_obs, reward, done, info = env.step(action)
 
         if env_name == "MountainCarContinuous-v0":
@@ -184,6 +212,12 @@ def main(cfg: DictConfig) -> None:
 
             eval_returns.append(
                 (info['total']['timesteps'], eval_stats['return']))
+
+        if params['reset'] and i % params['reset_interval'] == 0:
+            # create a completely new agent
+            new_params = copy.deepcopy(params)
+            new_params['seed'] = new_params['seed'] + i
+            agent = make_agent(new_params, env)
 
 
 if __name__ == "__main__":

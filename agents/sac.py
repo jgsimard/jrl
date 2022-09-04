@@ -62,12 +62,8 @@ def update_critic(key: Any, actor: TrainState, critic: TrainState, temperature: 
         # estimates
         q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
 
-        q1_loss = rlax.l2_loss(q1, target_q).mean()
-        q2_loss = rlax.l2_loss(q2, target_q).mean()
-        loss = q1_loss + q2_loss
-
+        loss = rlax.l2_loss(q1, target_q).mean() + rlax.l2_loss(q2, target_q).mean()
         info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
-
         return loss, info
 
     value_and_grad_fn = jax.value_and_grad(critic_loss_fn, has_aux=True)
@@ -109,8 +105,6 @@ def _update(rng: Any,
         new_critic = new_critic.replace(
             target_params=optax.incremental_update(new_critic.params, new_critic.target_params, tau)
         )
-    else:
-        new_critic = new_critic
 
     new_actor, actor_info = update_actor(key_actor, actor, new_critic, temperature, batch)
     new_temperature, temperature_info = update_temperature(temperature,
@@ -154,7 +148,6 @@ class SAC:
 
         rng = jax.random.PRNGKey(seed)
         self.rng, actor_key, critic_key, temp_key = jax.random.split(rng, 4)
-
         actor_model = NormalTanhPolicy(
             hidden_dims,
             action_dim,
@@ -210,5 +203,6 @@ class SAC:
             self.actor.params,
             observations,
             temperature)
+
         actions = np.asarray(actions)
         return np.clip(actions, -1.0, 1.0)

@@ -10,7 +10,7 @@ batch_size: 256
 updates_per_step: 1
 max_steps: 1000000
 replay_buffer_size: 1000000
-start_training: 5000
+start_training: 500
 tqdm: True
 save_video: False
 track: False
@@ -19,6 +19,17 @@ wandb_entity: ""
 grad_norm_clipping: 10.0
 action_repeat: 1
 pixels: False
+num_envs: 1
+
+envpool: False
+#envpool: True
+
+replay_buffer_type: "basic"
+#replay_buffer_type: "compressed"
+n_step: 1
+replay_buffer_num_workers: 4
+save_snapshot: False
+
 
 # Agent specific parameters
 agent_name: 'No name'
@@ -27,4 +38,5 @@ agent_name: 'No name'
 # reset interval
 # https://arxiv.org/pdf/2205.07802.pdf
 reset: False
+#reset: True
 reset_interval: 200000

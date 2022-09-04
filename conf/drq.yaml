@@ -4,11 +4,11 @@ defaults:
 agent_name: 'DrQ'
 
 env_name: 'cheetah-run'
-batch_size: 512
+batch_size: 64
 updates_per_step: 1
 max_steps: 500000
 replay_buffer_size: 100000
-start_training: 1000
+start_training: 100
 pixels: True
 action_repeat: null
 

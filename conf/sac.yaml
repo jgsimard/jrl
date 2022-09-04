@@ -2,11 +2,12 @@ defaults:
   - config
 
 agent_name: 'SAC'
+start_training: 5000
 
 SAC:
   policy_freq: 1
   target_entropy: None
-  backup_entropy: 0.5
+  backup_entropy: True
   init_temperature: 1.0
   init_mean: None
   policy_final_fc_init_scale: 1.0

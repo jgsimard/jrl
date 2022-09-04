@@ -3,13 +3,11 @@ from typing import Sequence, Callable, Union
 from flax import linen as nn
 import jax.numpy as jnp
 
+from common.utils import default_init
 
-# kernel_init=nn.initializers.he_uniform()
 
 def dense_layer(x, size, activation, dropout_rate=0.0, training=True, layer_norm=False):
-    x = nn.Dense(size, kernel_init=nn.initializers.he_normal())(x)
-    # x = nn.Dense(size)(x)
-
+    x = nn.Dense(size, kernel_init=default_init())(x)
     if dropout_rate > 0:
         x = nn.Dropout(rate=dropout_rate)(x, deterministic=not training)
     if layer_norm:

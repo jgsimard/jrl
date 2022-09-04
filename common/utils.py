@@ -1,9 +1,8 @@
-import jax
-from common.types import TrainState
+from typing import Optional
+
+from flax import linen as nn
+from jax import numpy as jnp
 
 
-def soft_target_update(state: TrainState, tau):
-    updated_params = jax.tree_map(lambda p, tp: p * tau + tp * (1.0 - tau),
-                                  state.params,
-                                  state.target_params)
-    return state.replace(target_params=updated_params)
+def default_init(scale: Optional[float] = jnp.sqrt(2)):
+    return nn.initializers.orthogonal(scale)

@@ -40,12 +40,8 @@ def update_critic(actor: TrainState,
         # estimates
         q1, q2 = critic.apply_fn(critic_params, batch.observations, batch.actions)
 
-        q1_loss = rlax.l2_loss(q1, target_q).mean()
-        q2_loss = rlax.l2_loss(q2, target_q).mean()
-        loss = q1_loss + q2_loss
-
+        loss = rlax.l2_loss(q1, target_q).mean() + rlax.l2_loss(q2, target_q).mean()
         info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
-
         return loss, info
 
     value_and_grad_fn = jax.value_and_grad(critic_loss_fn, has_aux=True)
@@ -147,7 +143,6 @@ class TD3:
 
         self.step = 0
 
-    @functools.partial(jax.jit, static_argnames=('update_target'))
     def update(self, batch: Batch):
         update_target = self.step % self.policy_freq == 0
         self.rng, self.actor, self.critic, info = _update(

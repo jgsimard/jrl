@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 
-from env.wrappers.common import TimeStep
+from common.env.wrappers.common import TimeStep
 
 
 class RepeatAction(gym.Wrapper):

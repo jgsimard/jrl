@@ -10,7 +10,7 @@ import numpy as np
 from dm_control import suite
 from gym import core, spaces
 
-from env.wrappers.common import TimeStep
+from common.env.wrappers.common import TimeStep
 
 
 def dmc_spec2gym_space(spec):

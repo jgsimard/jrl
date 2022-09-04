@@ -8,17 +8,22 @@ from .dataset import Dataset
 
 class ReplayBuffer(Dataset):
 
-    def __init__(self, observation_space: gym.spaces.Box,
+    def __init__(self,
+                 observation_space: gym.spaces.Box,
                  action_space: Union[gym.spaces.Discrete,
-                                     gym.spaces.Box], capacity: int):
+                                     gym.spaces.Box],
+                 capacity: int):
 
         observations = np.empty((capacity, *observation_space.shape),
                                 dtype=observation_space.dtype)
         actions = np.empty((capacity, *action_space.shape),
                            dtype=action_space.dtype)
-        rewards = np.empty((capacity, ), dtype=np.float32)
-        masks = np.empty((capacity, ), dtype=np.float32)
-        dones_float = np.empty((capacity, ), dtype=np.float32)
+        rewards = np.empty((capacity, ),
+                           dtype=np.float32)
+        masks = np.empty((capacity, ),
+                         dtype=np.float32)
+        dones_float = np.empty((capacity, ),
+                               dtype=np.float32)
         next_observations = np.empty((capacity, *observation_space.shape),
                                      dtype=observation_space.dtype)
         super().__init__(observations=observations,
@@ -34,7 +39,8 @@ class ReplayBuffer(Dataset):
         self.insert_index = 0
         self.capacity = capacity
 
-    def initialize_with_dataset(self, dataset: Dataset,
+    def initialize_with_dataset(self,
+                                dataset: Dataset,
                                 num_samples: Optional[int]):
         assert self.insert_index == 0, 'Can insert a batch online in an empty replay buffer.'
 
@@ -63,8 +69,12 @@ class ReplayBuffer(Dataset):
         self.insert_index = num_samples
         self.size = num_samples
 
-    def insert(self, observation: np.ndarray, action: np.ndarray,
-               reward: float, mask: float, done_float: float,
+    def insert(self,
+               observation: np.ndarray,
+               action: np.ndarray,
+               reward: float,
+               mask: float,
+               done_float: float,
                next_observation: np.ndarray):
         self.observations[self.insert_index] = observation
         self.actions[self.insert_index] = action

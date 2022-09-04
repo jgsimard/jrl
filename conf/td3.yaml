@@ -3,6 +3,8 @@ defaults:
 
 agent_name: 'TD3'
 
+start_training: 25000
+
 TD3:
   policy_freq: 2
   policy_noise: 0.2
