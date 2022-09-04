@@ -5,9 +5,9 @@ from gym.wrappers import RescaleAction
 from gym.wrappers.pixel_observation import PixelObservationWrapper
 
 # TODO : use envpool to make it faster!
-# import envpool
+import envpool
 
-from common.env import wrappers
+from env import wrappers
 
 
 def make_env(env_name: str,
@@ -21,18 +21,23 @@ def make_env(env_name: str,
              image_size: int = 84,
              sticky: bool = False,
              gray_scale: bool = False,
-             flatten: bool = True) -> gym.Env:
+             flatten: bool = True,
+             use_envpool=False,
+             num_envs=1) -> gym.Env:
     # Check if the env is in gym.
     all_envs = gym.envs.registry.all()
     env_ids = [env_spec.id for env_spec in all_envs]
 
-    if env_name in env_ids:
-        env = gym.make(env_name)
+    if use_envpool:
+        env = envpool.make_gym(env_name, num_envs=num_envs)
     else:
-        domain_name, task_name = env_name.split('-')
-        env = wrappers.DMCEnv(domain_name=domain_name,
-                              task_name=task_name,
-                              task_kwargs={'random': seed})
+        if env_name in env_ids:
+            env = gym.make(env_name)
+        else:
+            domain_name, task_name = env_name.split('-')
+            env = wrappers.DMCEnv(domain_name=domain_name,
+                                  task_name=task_name,
+                                  task_kwargs={'random': seed})
 
     if flatten and isinstance(env.observation_space, gym.spaces.Dict):
         env = gym.wrappers.FlattenObservation(env)
