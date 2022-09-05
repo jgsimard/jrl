@@ -54,6 +54,17 @@ def make_agent(params, env):
             critic_lr=params['SAC']['critic_lr'],
             temperature_lr=params['SAC']['temperature_lr']
         )
+    elif agent_name == 'DroQ':
+        agent = SAC(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            actor_lr=params['DroQ']['actor_lr'],
+            critic_lr=params['DroQ']['critic_lr'],
+            temperature_lr=params['DroQ']['temperature_lr'],
+            layer_norm=params['DroQ']['layer_norm'],
+            dropout_rate=params['DroQ']['dropout_rate'],
+        )
     elif agent_name == 'DrQ':
         agent = DrQ(
             params['seed'],
@@ -158,10 +169,9 @@ def main(cfg: DictConfig) -> None:
     eval_returns = []
     done = False
     observation = env.reset()
+    num_steps = params['max_steps'] // action_repeat + 1
 
-    for i in (pbar := tqdm.tqdm(range(1, params['max_steps'] // action_repeat + 1),
-                       smoothing=0.1,
-                       disable=not params['tqdm'])):
+    for i in (pbar := tqdm.tqdm(range(1, num_steps), smoothing=0.1, disable=not params['tqdm'])):
         if i < params['start_training']:
             action = env.action_space.sample()
         else:

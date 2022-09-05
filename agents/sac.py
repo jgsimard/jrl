@@ -131,7 +131,9 @@ class SAC:
                  backup_entropy: bool = True,
                  init_temperature: float = 1.0,
                  init_mean: Optional[np.ndarray] = None,
-                 policy_final_fc_init_scale: float = 1.0
+                 policy_final_fc_init_scale: float = 1.0,
+                 layer_norm=False,
+                 dropout_rate=0.0
                  ):
         action_dim = actions.shape[-1]
 
@@ -160,7 +162,11 @@ class SAC:
             tx=optax.adam(learning_rate=actor_lr)
         )
 
-        critic_model = NCriticMLP(hidden_dims=hidden_dims, n_critic=2)
+        critic_model = NCriticMLP(
+            hidden_dims=hidden_dims,
+            n_critic=2,
+            layer_norm=layer_norm,
+            dropout_rate=dropout_rate)
         self.critic = TrainState.create(
             apply_fn=critic_model.apply,
             params=critic_model.init(critic_key, obs, actions),
