@@ -33,40 +33,41 @@ PLANET_ACTION_REPEAT = {
 
 
 def make_agent(params, env):
-    agent_name = params['agent_name']
+    agent_params = params['agent']
+    agent_name = agent_params['name']
     if agent_name == 'TD3':
         agent = TD3(
             params['seed'],
             env.observation_space.sample()[np.newaxis],
             env.action_space.sample()[np.newaxis],
-            actor_lr=params['TD3']['actor_lr'],
-            critic_lr=params['TD3']['critic_lr'],
-            exploration_noise=params['TD3']['exploration_noise'],
-            policy_noise=params['TD3']['exploration_noise'],
-            noise_clip=params['TD3']['noise_clip']
+            actor_lr=agent_params['actor_lr'],
+            critic_lr=agent_params['critic_lr'],
+            exploration_noise=agent_params['exploration_noise'],
+            policy_noise=agent_params['exploration_noise'],
+            noise_clip=agent_params['noise_clip']
         )
     elif agent_name == 'SAC':
         agent = SAC(
             params['seed'],
             env.observation_space.sample()[np.newaxis],
             env.action_space.sample()[np.newaxis],
-            actor_lr=params['SAC']['actor_lr'],
-            critic_lr=params['SAC']['critic_lr'],
-            temperature_lr=params['SAC']['temperature_lr']
+            actor_lr=agent_params['actor_lr'],
+            critic_lr=agent_params['critic_lr'],
+            temperature_lr=agent_params['temperature_lr']
         )
     elif agent_name == 'DrQ':
         agent = DrQ(
             params['seed'],
             env.observation_space.sample()[np.newaxis],
             env.action_space.sample()[np.newaxis],
-            hidden_dims=params['DrQ']['hidden_dims'],
-            cnn_features=params['DrQ']['cnn_features'],
-            cnn_strides=params['DrQ']['cnn_strides'],
-            cnn_padding=params['DrQ']['cnn_padding'],
-            latent_dim=params['DrQ']['latent_dim'],
-            actor_lr=params['DrQ']['actor_lr'],
-            critic_lr=params['DrQ']['critic_lr'],
-            temperature_lr=params['DrQ']['temperature_lr']
+            hidden_dims=agent_params['hidden_dims'],
+            cnn_features=agent_params['cnn_features'],
+            cnn_strides=agent_params['cnn_strides'],
+            cnn_padding=agent_params['cnn_padding'],
+            latent_dim=agent_params['latent_dim'],
+            actor_lr=agent_params['actor_lr'],
+            critic_lr=agent_params['critic_lr'],
+            temperature_lr=agent_params['temperature_lr']
         )
     else:
         raise NotImplementedError(f"Agent {agent_name} not implemented yet")
@@ -87,7 +88,7 @@ def main(cfg: DictConfig) -> None:
     exp_path = hydra_cfg['runtime']['output_dir']
 
     env_name = params['env_name']
-    agent_name = params['agent_name']
+    agent_name = params['agent']['name']
 
     print(agent_name)
     print(env_name)

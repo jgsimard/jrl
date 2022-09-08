@@ -1,10 +1,8 @@
-defaults:
-  - config
-
-agent_name: 'SAC'
+# @package _global_
 start_training: 5000
 
-SAC:
+agent:
+  name: 'SAC'
   policy_freq: 1
   target_entropy: None
   backup_entropy: True
