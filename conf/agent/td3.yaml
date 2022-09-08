@@ -1,11 +1,8 @@
-defaults:
-  - config
-
-agent_name: 'TD3'
-
+# @package _global_
 start_training: 25000
 
-TD3:
+agent:
+  name: 'TD3'
   policy_freq: 2
   policy_noise: 0.2
   noise_clip: 0.5
