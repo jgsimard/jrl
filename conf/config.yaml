@@ -1,4 +1,5 @@
 defaults:
+  - _self_
 #  - replay_buffer@_global_: dataloader
 #  - domain_randomization@_global_: none
 #  - obs@_global_: image_only
