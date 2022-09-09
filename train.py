@@ -13,9 +13,9 @@ from tensorboardX import SummaryWriter
 
 from data.replay_buffer import ReplayBuffer
 # from data.replay_buffer_compressed import ReplayBufferStorage, make_replay_loader
-from common.env.utils import make_env
+from envs.utils import make_env
 from common.evaluation import evaluate
-from utils import make_agent
+from agents import make_agent
 
 warnings.filterwarnings("ignore")  # TODO remove this
 
