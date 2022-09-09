@@ -1,0 +1,13 @@
+# @package _global_
+defaults:
+  - sac
+
+# implementation of https://arxiv.org/pdf/2110.02034.pdf : DroQ
+# Dropout Q-funtions for double efficient reinforcement learning
+
+updates_per_step: 20
+
+agent:
+  name: 'DroQ'
+  layer_norm: True
+  dropout_rate: 0.001
