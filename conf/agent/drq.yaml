@@ -1,8 +1,4 @@
-defaults:
-  - config
-
-agent_name: 'DrQ'
-
+# @package _global_
 env_name: 'cheetah-run'
 batch_size: 64
 updates_per_step: 1
@@ -15,8 +11,8 @@ action_repeat: null
 gray_scale: False
 image_size: 84
 
-DrQ:
-  # SAC
+agent:
+  name: 'DrQ'
   policy_freq: 1
   target_entropy: None
   backup_entropy: 0.5
