@@ -232,10 +232,14 @@ def main(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
-    # # force jax to be on the cpu!
+    # # # force jax to be on the cpu!
+    # import jax
     # jax.config.update('jax_platform_name', 'cpu')
 
     # because of my small gpu
+    # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".1"
     os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+    # os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "False"
+    # os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = "cpu"
 
     main()

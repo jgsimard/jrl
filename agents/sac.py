@@ -26,9 +26,9 @@ class Temperature(nn.Module):
 
 def update_temperature(temperature: TrainState, entropy: float, target_entropy: float):
     def temperature_loss_fn(params):
-        temperature_value = temperature.apply_fn(params)
-        temperature_loss = temperature_value * (entropy - target_entropy).mean()
-        return temperature_loss, {'temperature': temperature_value, 'temp_loss': temperature_loss}
+        value = temperature.apply_fn(params)
+        loss = value * (entropy - target_entropy).mean()
+        return loss, {'temperature': value, 'temperature_loss': loss}
 
     value_and_grad_fn = jax.value_and_grad(temperature_loss_fn, has_aux=True)
     (_, info), grads = value_and_grad_fn(temperature.params)
