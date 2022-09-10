@@ -3,6 +3,7 @@ import numpy as np
 from .drq import DrQ
 from .sac import SAC
 from .td3 import TD3
+from .ddpg import DDPG
 
 
 def make_agent(params, env):
@@ -19,6 +20,16 @@ def make_agent(params, env):
             policy_noise=agent_params['exploration_noise'],
             noise_clip=agent_params['noise_clip']
         )
+    elif agent_name == 'DDPG':
+        agent = DDPG(
+            params['seed'],
+            env.observation_space.sample()[np.newaxis],
+            env.action_space.sample()[np.newaxis],
+            actor_lr=agent_params['actor_lr'],
+            critic_lr=agent_params['critic_lr'],
+            exploration_noise=agent_params['exploration_noise']
+        )
+
     elif agent_name == 'SAC':
         agent = SAC(
             params['seed'],
