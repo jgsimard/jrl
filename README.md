@@ -3,29 +3,28 @@
 ## Goal
 Implement as many RL algorithms as possible in JAX
 
-## Implementation whishlist
-### Discrete Control
-- [ ] DQN (https://arxiv.org/pdf/1312.5602)
-- [ ] Rainbow (https://arxiv.org/pdf/1710.02298)
+## Completed 
 
-### Continuous Control
-- [ ] DDPG (https://arxiv.org/pdf/1509.02971.pdf)
-- [x] TD3 (https://proceedings.mlr.press/v80/fujimoto18a.html)
-- [x] SAC (https://arxiv.org/pdf/1801.01290)
-- [ ] REDQ (http://arxiv.org/abs/2101.05982)
-- [ ] DRoQ (http://arxiv.org/abs/2110.02034)
-### Model Based
-- [ ] Planet (https://arxiv.org/pdf/1811.04551.pdf)
-- [ ] Dreamer (https://arxiv.org/pdf/1912.01603)
-- [ ] DreamerV2 (https://arxiv.org/pdf/2010.02193)
+| Algorithm | Action Space | Method | File |
+|-----------|--------------|--------|------|
+|[DDPG](https://arxiv.org/pdf/1509.02971.pdf)   | Continuous   |Model-Free| [ddpg.py](agents/ddpg.py)|
+|[TD3](https://proceedings.mlr.press/v80/fujimoto18a.html)   |Continuous| Model-Free  | [td3.py](agents/td3.py) |
+|[SAC](https://arxiv.org/pdf/1801.01290)   | Continuous   |Model-Free |[sac.py](agents/sac.py)|
+|[DrQ](https://arxiv.org/pdf/2004.13649)   | Continuous   |Model-Free |[drq.py](agents/drq.py)|
+|[DroQ](http://arxiv.org/abs/2110.02034)   | Continuous   |Model-Free |[sac.py](agents/droq.py)|
 
-### PPO
-- [ ] TRPO (https://arxiv.org/pdf/1502.05477)
-- [ ] PPO (http://arxiv.org/abs/1707.06347)
+## Whishlist
 
-### Pixels
-- [ ] DrQ (https://arxiv.org/pdf/2004.13649)
-- [ ] DrQV2 (https://arxiv.org/pdf/2107.09645.pdf)
+| Algorithm | Action Space | Method | File |
+|-----------|--------------|--------|------|
+|[DQN](https://arxiv.org/pdf/1312.5602)   | Discrete   |Model-Free| |
+|[Rainbow](https://arxiv.org/pdf/1710.02298)   |Discrete| Model-Free  | |
+|[Planet](https://arxiv.org/pdf/1811.04551.pdf)   | Continuous/Discrete   |Model-based ||
+|[Dreamer](https://arxiv.org/pdf/1912.01603)   | Continuous/Discrete   |Model-based ||
+|[DreamerV2](https://arxiv.org/pdf/2010.02193)   | Continuous/Discrete   |Model-based ||
+|[TRPO](https://arxiv.org/pdf/1502.05477)   | Continuous/Discrete   |Model-based ||
+|[PPO](http://arxiv.org/abs/1707.06347)   | Continuous/Discrete   |Model-based ||
+|[DrQv2](https://arxiv.org/pdf/2107.09645.pdf)   | Continuous   |Model-free ||
 
 
 ## Sources
