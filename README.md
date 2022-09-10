@@ -4,7 +4,6 @@
 Implement as many RL algorithms as possible in JAX
 
 ## Completed
-https://arxiv.org/abs/1812.05905
 
 | Algorithm                     | Action Space | Method | File |
 |-------------------------------|--------------|--------|------|
