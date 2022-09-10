@@ -1,4 +1,3 @@
-import functools
 from typing import Sequence
 
 import jax
@@ -54,7 +53,7 @@ def update_actor(actor: TrainState, critic: TrainState, batch: Batch):
     return actor.apply_gradients(grads=grads), info
 
 
-@functools.partial(jax.jit, static_argnames=('update_target'))
+@jax.jit
 def _update(actor: TrainState,
             critic: TrainState,
             batch: Batch,
