@@ -39,9 +39,10 @@ envpool: False
 
 replay_buffer_type: "basic"
 #replay_buffer_type: "compressed"
-n_step: 1
+nstep: 1
 replay_buffer_num_workers: 4
 save_snapshot: False
+discount: 0.99
 
 
 # reset interval

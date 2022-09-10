@@ -24,7 +24,9 @@ agent:
   temperature_lr: 0.0003
   # Image
   hidden_dims: [256, 256]
-  cnn_features: [32, 32, 32, 32]
-  cnn_strides: [2, 1, 1, 1]
+#  cnn_features: [32, 32, 32, 32]
+#  cnn_strides: [2, 1, 1, 1]
+  cnn_features: [32, 64, 128, 256]
+  cnn_strides: [2, 2, 2, 2]
   cnn_padding: 'VALID'
   latent_dim: 50

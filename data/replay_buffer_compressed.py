@@ -78,8 +78,8 @@ class ReplayBufferStorage:
 
 
 class ReplayBuffer(IterableDataset):
-    def __init__(self, replay_dir, max_size, num_workers, nstep, discount,
-                 fetch_every, save_snapshot):
+    def __init__(self,
+                 replay_dir, max_size, num_workers, nstep, discount, fetch_every, save_snapshot):
         self._replay_dir = replay_dir
         self._size = 0
         self._max_size = max_size

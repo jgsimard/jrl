@@ -11,6 +11,7 @@ from jax import numpy as jnp
 
 from agents.sac import update_actor, update_critic, Temperature, update_temperature
 from common.types import TrainState, Batch
+from common.utils import default_init
 from critics.mlp import NCriticMLP
 from policies.normal_tanh import NormalTanhPolicy
 from policies.sample import sample_actions
@@ -40,12 +41,12 @@ class Encoder(nn.Module):
     def __call__(self, observations: jnp.ndarray) -> jnp.ndarray:
         assert len(self.features) == len(self.strides)
 
-        x = observations.astype(jnp.float32) / 255.0
+        x = observations.astype(jnp.float32) / 255.0 - 0.5
         for features, stride in zip(self.features, self.strides):
             x = nn.Conv(features,
                         kernel_size=(3, 3),
                         strides=(stride, stride),
-                        # kernel_init=nn.initializers.orthogonal(jnp.sqrt(2)), # why this one?
+                        kernel_init=default_init(),  # why this one?
                         padding=self.padding)(x)
             x = nn.relu(x)
 
@@ -202,7 +203,13 @@ class DrQ:
             tx=optax.adam(learning_rate=actor_lr)
         )
 
-        critic_model = DrQNCritic(hidden_dims=hidden_dims, n_critic=2)
+        critic_model = DrQNCritic(
+            hidden_dims=hidden_dims,
+            cnn_features=cnn_features,
+            cnn_strides=cnn_strides,
+            cnn_padding=cnn_padding,
+            latent_dim=latent_dim,
+            n_critic=2)
         self.critic = TrainState.create(
             apply_fn=critic_model.apply,
             params=critic_model.init(critic_key, observations, actions),

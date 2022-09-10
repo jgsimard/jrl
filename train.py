@@ -1,18 +1,25 @@
 import os
+
+# to work with my tiny gpu
+os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+
 import random
 import copy
+from pathlib import Path
 
 import warnings  # TODO remove this
+warnings.filterwarnings("ignore", category=DeprecationWarning)  # TODO remove this
+
 
 import hydra
 import numpy as np
 import tqdm
 from omegaconf import DictConfig, OmegaConf
 from tensorboardX import SummaryWriter
-# from dm_env import specs
+from dm_env import specs
 
 from data.replay_buffer import ReplayBuffer
-# from data.replay_buffer_compressed import ReplayBufferStorage, make_replay_loader
+from data.replay_buffer_compressed import ReplayBufferStorage, make_replay_loader
 from envs.utils import make_env
 from common.evaluation import evaluate
 from agents import make_agent
@@ -66,8 +73,7 @@ def main(cfg: DictConfig) -> None:
         gray_scale = params['gray_scale']
         image_size = params['image_size']
 
-
-        def make_env_(env_name, seed, video_folder, envpool):
+        def make_env_(env_name, seed, video_folder, envpool=False):
             return make_env(env_name,
                             seed,
                             video_folder,
@@ -96,26 +102,28 @@ def main(cfg: DictConfig) -> None:
         replay_buffer = ReplayBuffer(env.observation_space,
                                      env.action_space,
                                      replay_buffer_size)
-    # elif replay_buffer_type == 'compressed':
-    #     data_specs = (env.observation_spec(),
-    #                   env.action_spec(),
-    #                   specs.Array((1,), np.float32, 'reward'),
-    #                   specs.Array((1,), np.float32, 'discount'))
-    #
-    #     buffer_path = os.path.join(exp_path, 'buffer')
-    #
-    #     replay_storage = ReplayBufferStorage(data_specs, buffer_path)
-    #     replay_loader = make_replay_loader(
-    #         buffer_path, params['replay_buffer_size'],
-    #         params['batch_size'], params['replay_buffer_num_workers'],
-    #         params['save_snapshot'], params['nstep'], params['discount'])
-    #     _replay_iter = None
+    elif replay_buffer_type == 'compressed':
+        data_specs = (env.observation_spec(),
+                      env.action_spec(),
+                      specs.Array((1,), np.float32, 'reward'),
+                      specs.Array((1,), np.float32, 'discount'))
+
+        print(data_specs)
+        buffer_path = Path(os.path.join(exp_path, 'buffer'))
+
+        replay_storage = ReplayBufferStorage(data_specs, buffer_path)
+        replay_loader = make_replay_loader(
+            buffer_path, params['replay_buffer_size'],
+            params['batch_size'], params['replay_buffer_num_workers'],
+            params['save_snapshot'], params['nstep'], params['discount'])
+        _replay_iter = None
     else:
         raise NotImplementedError(f"Replay buffer type {replay_buffer_type} not implemented yet")
     eval_returns = []
     done = False
     observation = env.reset()
     num_steps = params['max_steps'] // action_repeat + 1
+
 
     for i in (pbar := tqdm.tqdm(range(1, num_steps), smoothing=0.1, disable=not params['tqdm'])):
         if i < params['start_training']:
@@ -177,13 +185,14 @@ def main(cfg: DictConfig) -> None:
 
 
 if __name__ == "__main__":
-    # # # force jax to be on the cpu!
+    # # force jax to be on the cpu!
     # import jax
     # jax.config.update('jax_platform_name', 'cpu')
 
     # because of my small gpu
     # os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = ".1"
     os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+    # os.environ['MUJOCO_GL'] = 'egl'
     # os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "False"
     # os.environ['XLA_PYTHON_CLIENT_ALLOCATOR'] = "cpu"
 

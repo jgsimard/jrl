@@ -132,8 +132,8 @@ class SAC:
                  init_temperature: float = 1.0,
                  init_mean: Optional[np.ndarray] = None,
                  policy_final_fc_init_scale: float = 1.0,
-                 layer_norm=False,
-                 dropout_rate=0.0
+                 layer_norm: bool = False,
+                 dropout_rate: float = 0.0
                  ):
         action_dim = actions.shape[-1]
 
