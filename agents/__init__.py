@@ -1,6 +1,7 @@
 import numpy as np
 
-from .drq import DrQ
+# from .drq import DrQ
+from .drq_test import DrQ
 from .sac import SAC
 from .td3 import TD3
 from .ddpg import DDPG

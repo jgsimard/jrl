@@ -10,25 +10,12 @@ from flax import linen as nn
 from jax import numpy as jnp
 
 from agents.sac import update_actor, update_critic, Temperature, update_temperature
+from common.augmentations import batched_random_crop
 from common.types import TrainState, Batch
 from common.utils import default_init
 from critics.mlp import NCriticMLP
 from policies.normal_tanh import NormalTanhPolicy
 from policies.sample import sample_actions
-
-
-# Augmentations
-def random_crop(key, img, padding):
-    crop_from = jax.random.randint(key, (2, ), 0, 2 * padding + 1)
-    crop_from = jnp.concatenate([crop_from, jnp.zeros((1, ), dtype=jnp.int32)])
-    padded_img = jnp.pad(img, ((padding, padding), (padding, padding), (0, 0)),
-                         mode='edge')
-    return jax.lax.dynamic_slice(padded_img, crop_from, img.shape)
-
-
-def batched_random_crop(key, imgs, padding=4):
-    keys = jax.random.split(key, imgs.shape[0])
-    return jax.vmap(random_crop, (0, 0, None))(keys, imgs, padding)
 
 
 # networks
