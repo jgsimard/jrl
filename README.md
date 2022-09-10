@@ -13,7 +13,7 @@ Implement as many RL algorithms as possible in JAX
 |[DrQ](https://arxiv.org/pdf/2004.13649)   | Continuous   |Model-Free |[drq.py](agents/drq.py)|
 |[DroQ](http://arxiv.org/abs/2110.02034)   | Continuous   |Model-Free |[sac.py](agents/droq.py)|
 
-## Whishlist
+## Wishlist
 
 | Algorithm | Action Space | Method | File |
 |-----------|--------------|--------|------|
