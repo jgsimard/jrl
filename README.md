@@ -3,7 +3,7 @@
 ## Goal
 Implement as many RL algorithms as possible in JAX
 
-## Completed 
+## Completed
 
 | Algorithm | Action Space | Method | File |
 |-----------|--------------|--------|------|
