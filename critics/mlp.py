@@ -33,7 +33,8 @@ class NCriticMLP(nn.Module):
     def __call__(self, obs, actions):
         n_critic_mlp = nn.vmap(
             CriticMLP,
-            in_axes=None, out_axes=0,
+            in_axes=None,
+            out_axes=0,
             variable_axes={'params': 0},
             split_rngs={'params': True},
             axis_size=self.n_critic)

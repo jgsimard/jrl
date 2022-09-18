@@ -20,6 +20,7 @@ from policies.normal_tanh import NormalTanhPolicy
 
 # this version is ~5-10% slower than the other version
 
+
 # networks
 class Encoder(nn.Module):
     features: Sequence[int] = (32, 32, 32, 32)
@@ -78,21 +79,20 @@ class DrQPolicy(nn.Module):
         return NormalTanhPolicy(self.hidden_dims, self.action_dim)(x, temperature)
 
 
-def update_critic(key: Any, encoder: TrainState, actor: TrainState, critic: TrainState,
-                  temperature: TrainState, batch: Batch, discount: float, backup_entropy: bool):
+def update_critic_and_encoder(key: Any, encoder: TrainState, actor: TrainState, critic: TrainState,
+                              temperature: TrainState, batch: Batch, discount: float,
+                              backup_entropy: bool):
     def critic_loss_fn(critic_params, encoder_params):
-        # augmentations
-        representations = encoder.apply_fn(encoder_params, batch.observations)
-        next_representations = encoder.apply_fn(encoder_params, batch.next_observations)
+        # encode observations
+        enc_obs = encoder.apply_fn(encoder_params, batch.observations)
+        next_enc_obs = encoder.apply_fn(encoder_params, batch.next_observations)
 
         # noisy actions
-        dist = actor.apply_fn(actor.params, next_representations)
-        next_actions = dist.sample(seed=key)
+        next_actions_dist = actor.apply_fn(actor.params, next_enc_obs)
+        next_actions = next_actions_dist.sample(seed=key)
 
         # twin targets
-        next_q1, next_q2 = critic.apply_fn(critic.target_params,
-                                           next_representations,
-                                           next_actions)
+        next_q1, next_q2 = critic.apply_fn(critic.target_params, next_enc_obs, next_actions)
         next_q = jnp.minimum(next_q1, next_q2)
 
         # bellman target equation
@@ -100,14 +100,14 @@ def update_critic(key: Any, encoder: TrainState, actor: TrainState, critic: Trai
 
         # entropy
         if backup_entropy:
-            next_log_probs = dist.log_prob(next_actions)
+            next_log_probs = next_actions_dist.log_prob(next_actions)
             target_q -= discount * \
                         batch.masks * \
                         temperature.apply_fn(temperature.params) * \
                         next_log_probs
 
         # estimates
-        q1, q2 = critic.apply_fn(critic_params, representations, batch.actions)
+        q1, q2 = critic.apply_fn(critic_params, enc_obs, batch.actions)
 
         loss = rlax.l2_loss(q1, target_q).mean() + rlax.l2_loss(q2, target_q).mean()
         info = {'critic_loss': loss, 'q1': q1.mean(), 'q2': q2.mean()}
@@ -126,13 +126,13 @@ def update_actor(key,
                  critic: TrainState,
                  temperature: TrainState, batch):
     def actor_loss_fn(actor_params):
-        # augmentations
-        representations = encoder.apply_fn(encoder.params, batch.observations)
+        # encode observations
+        enc_obs = encoder.apply_fn(encoder.params, batch.observations)
 
         # SAC
-        dist_actions = actor.apply_fn(actor_params, representations)
+        dist_actions = actor.apply_fn(actor_params, enc_obs)
         actions = dist_actions.sample(seed=key)
-        q1, q2 = critic.apply_fn(critic.params, representations, actions)
+        q1, q2 = critic.apply_fn(critic.params, enc_obs, actions)
         q = jnp.minimum(q1, q2)
         log_probs = dist_actions.log_prob(actions)
         loss = (log_probs * temperature.apply_fn(temperature.params) - q).mean()
@@ -163,9 +163,10 @@ def _update(rng: Any,
     batch.replace(observations=observations, next_observations=next_observations)
 
     # update critic using SAC update
-    new_critic, new_encoder, critic_info = update_critic(key_critic, encoder, actor, critic,
-                                                         temperature, batch, discount,
-                                                         backup_entropy=backup_entropy)
+    new_critic, new_encoder, critic_info = update_critic_and_encoder(key_critic,
+                                                                     encoder, actor, critic,
+                                                                     temperature, batch, discount,
+                                                                     backup_entropy)
 
     if update_target:
         new_critic = new_critic.replace(
@@ -175,7 +176,8 @@ def _update(rng: Any,
         new_critic = critic
 
     # update actor, temperature using SAC functions
-    new_actor, actor_info = update_actor(key_actor, encoder, actor, new_critic, temperature, batch)
+    new_actor, actor_info = update_actor(key_actor, new_encoder, actor, new_critic,
+                                         temperature, batch)
     new_temperature, temperature_info = update_temperature(temperature,
                                                            actor_info['entropy'],
                                                            target_entropy)
@@ -286,11 +288,8 @@ class DrQ:
     def sample_actions(self,
                        observations: np.ndarray,
                        temperature: float = 1.0) -> jnp.ndarray:
-        self.rng, actions = _sample_actions(self.rng,
-                                            self.encoder,
-                                            self.actor,
-                                            observations,
-                                            temperature)
+        self.rng, actions = _sample_actions(self.rng, self.encoder, self.actor,
+                                            observations, temperature)
         actions = np.asarray(actions)
         return np.clip(actions, -1.0, 1.0)
 

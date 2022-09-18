@@ -1,15 +1,8 @@
 import os
-
-# to work with my tiny gpu
-os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
-
 import random
 import copy
-from pathlib import Path
 
 import warnings  # TODO remove this
-warnings.filterwarnings("ignore", category=DeprecationWarning)  # TODO remove this
-
 
 import hydra
 import numpy as np
@@ -19,10 +12,11 @@ from tensorboardX import SummaryWriter
 from dm_env import specs
 
 from data.replay_buffer import ReplayBuffer
-from data.replay_buffer_compressed import ReplayBufferStorage, make_replay_loader
 from envs.utils import make_env
 from common.evaluation import evaluate
 from agents import make_agent
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)  # TODO remove this
 
 warnings.filterwarnings("ignore")  # TODO remove this
 
@@ -109,21 +103,22 @@ def main(cfg: DictConfig) -> None:
                       specs.Array((1,), np.float32, 'discount'))
 
         print(data_specs)
-        buffer_path = Path(os.path.join(exp_path, 'buffer'))
-
-        replay_storage = ReplayBufferStorage(data_specs, buffer_path)
-        replay_loader = make_replay_loader(
-            buffer_path, params['replay_buffer_size'],
-            params['batch_size'], params['replay_buffer_num_workers'],
-            params['save_snapshot'], params['nstep'], params['discount'])
-        _replay_iter = None
+        # from data.replay_buffer_compressed import ReplayBufferStorage, make_replay_loader
+        # from pathlib import Path
+        # buffer_path = Path(os.path.join(exp_path, 'buffer'))
+        #
+        # replay_storage = ReplayBufferStorage(data_specs, buffer_path)
+        # replay_loader = make_replay_loader(
+        #     buffer_path, params['replay_buffer_size'],
+        #     params['batch_size'], params['replay_buffer_num_workers'],
+        #     params['save_snapshot'], params['nstep'], params['discount'])
+        # _replay_iter = None
     else:
         raise NotImplementedError(f"Replay buffer type {replay_buffer_type} not implemented yet")
     eval_returns = []
     done = False
     observation = env.reset()
     num_steps = params['max_steps'] // action_repeat + 1
-
 
     for i in (pbar := tqdm.tqdm(range(1, num_steps), smoothing=0.1, disable=not params['tqdm'])):
         if i < params['start_training']:

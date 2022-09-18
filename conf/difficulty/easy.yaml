@@ -1,0 +1,3 @@
+# @package _global_
+num_train_frames: 1100000
+stddev_schedule: 'linear(1.0,0.1,100000)'

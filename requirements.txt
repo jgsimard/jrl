@@ -10,3 +10,5 @@ omegaconf~=2.2.3
 tensorboardx~=2.5.1
 
 distrax~=0.1.2
+
+envpool~=0.6.4

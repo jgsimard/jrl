@@ -1,13 +1,7 @@
 defaults:
   - _self_
-#  - replay_buffer@_global_: dataloader
-#  - domain_randomization@_global_: none
-#  - obs@_global_: image_only
   - agent: td3
-#  - jump_start@_global_: none
-#  - goal_cond@_global_: none
-#  - multitask@_global_: none
-#  - task@_global_: nut_assembly_image
+  - difficulty: easy
 #  - override hydra/launcher: submitit_local
 
 
