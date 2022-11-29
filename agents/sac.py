@@ -9,6 +9,7 @@ from flax import linen as nn
 from jax import numpy as jnp
 
 from common.types import TrainState, Batch
+from common.utils import incremental_update_target
 from critics.mlp import NCriticMLP
 from policies.normal_tanh import NormalTanhPolicy
 from policies.sample import sample_actions
@@ -102,9 +103,7 @@ def _update(rng: Any,
                                             backup_entropy=backup_entropy)
 
     if update_target:
-        new_critic = new_critic.replace(
-            target_params=optax.incremental_update(new_critic.params, new_critic.target_params, tau)
-        )
+        new_critic = incremental_update_target(new_critic, tau)
 
     new_actor, actor_info = update_actor(key_actor, actor, new_critic, temperature, batch)
     new_temperature, temperature_info = update_temperature(temperature,

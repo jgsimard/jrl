@@ -12,7 +12,7 @@ from jax import numpy as jnp
 from agents.sac import update_actor, update_critic, Temperature, update_temperature
 from common.augmentations import batched_random_crop
 from common.types import TrainState, Batch
-from common.utils import default_init
+from common.utils import default_init, incremental_update_target
 from critics.mlp import NCriticMLP
 from policies.normal_tanh import NormalTanhPolicy
 from policies.sample import sample_actions
@@ -117,9 +117,7 @@ def _update(rng: Any,
                                             backup_entropy=backup_entropy)
 
     if update_target:
-        new_critic = new_critic.replace(
-            target_params=optax.incremental_update(new_critic.params, new_critic.target_params, tau)
-        )
+        new_critic = incremental_update_target(new_critic, tau)
     else:
         new_critic = critic
 

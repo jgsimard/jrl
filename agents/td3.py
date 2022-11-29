@@ -10,6 +10,7 @@ from jax import numpy as jnp
 
 from common.mlp import MLP
 from common.types import TrainState, Params, Batch
+from common.utils import incremental_update_target
 from critics.mlp import NCriticMLP
 from policies import sample
 
@@ -79,13 +80,8 @@ def _update(actor: TrainState,
 
     if update_target:
         new_actor, actor_info = update_actor(actor, new_critic, batch)
-
-        new_actor = new_actor.replace(
-            target_params=optax.incremental_update(new_actor.params, new_actor.target_params, tau)
-        )
-        new_critic = new_critic.replace(
-            target_params=optax.incremental_update(new_critic.params, new_critic.target_params, tau)
-        )
+        new_actor = incremental_update_target(new_actor, tau)
+        new_critic = incremental_update_target(new_critic, tau)
     else:
         actor_info = {}
         new_actor = actor
