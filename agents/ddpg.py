@@ -6,6 +6,7 @@ import optax
 import rlax
 from flax import linen as nn
 from jax import numpy as jnp
+from jax.random import KeyArray
 
 from common.mlp import MLP
 from common.types import TrainState, Params, Batch
@@ -93,7 +94,7 @@ class DDPG:
         self.exploration_noise = exploration_noise
         self.max_grad_norm = max_grad_norm
 
-        rng = jax.random.PRNGKey(seed)
+        rng : KeyArray = jax.random.PRNGKey(seed)
         self.rng, actor_key, critic_key = jax.random.split(rng, 3)
 
         actor_model = MLP(

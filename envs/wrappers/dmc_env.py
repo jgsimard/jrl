@@ -3,7 +3,7 @@
 # and modified to exclude duplicated code.
 
 import copy
-from typing import Dict, Optional, OrderedDict
+from typing import OrderedDict
 
 import dm_env
 import numpy as np
@@ -35,10 +35,10 @@ def dmc_spec2gym_space(spec):
 class DMCEnv(core.Env):
 
     def __init__(self,
-                 domain_name: Optional[str] = None,
-                 task_name: Optional[str] = None,
-                 env: Optional[dm_env.Environment] = None,
-                 task_kwargs: Optional[Dict] = {},
+                 domain_name: str | None = None,
+                 task_name: str | None = None,
+                 env: dm_env.Environment | None = None,
+                 task_kwargs: dict = {},
                  environment_kwargs=None):
         assert 'random' in task_kwargs, 'Please specify a seed, for deterministic behaviour.'
         assert (

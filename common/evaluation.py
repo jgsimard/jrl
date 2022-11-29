@@ -5,7 +5,7 @@ import numpy as np
 
 
 def evaluate(agent, env: gym.Env, num_episodes: int) -> Dict[str, float]:
-    stats = {'return': [], 'length': []}
+    stats: dict[str, list[float]] = {'return': [], 'length': []}
     successes = None
     for _ in range(num_episodes):
         observation, done = env.reset(), False

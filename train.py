@@ -1,14 +1,10 @@
 import os
 
-# to work with my tiny gpu
-os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+
 
 import random
 import copy
-from pathlib import Path
 
-import warnings  # TODO remove this
-warnings.filterwarnings("ignore", category=DeprecationWarning)  # TODO remove this
 
 
 import hydra
@@ -16,14 +12,17 @@ import numpy as np
 import tqdm
 from omegaconf import DictConfig, OmegaConf
 from tensorboardX import SummaryWriter
-from dm_env import specs
 
 from data.replay_buffer import ReplayBuffer
-from data.replay_buffer_compressed import ReplayBufferStorage, make_replay_loader
 from envs.utils import make_env
 from common.evaluation import evaluate
 from agents import make_agent
 
+# to work with my tiny gpu
+
+import warnings  # TODO remove this
+os.environ['XLA_PYTHON_CLIENT_PREALLOCATE'] = "false"
+warnings.filterwarnings("ignore", category=DeprecationWarning)  # TODO remove this
 warnings.filterwarnings("ignore")  # TODO remove this
 
 
@@ -103,20 +102,7 @@ def main(cfg: DictConfig) -> None:
                                      env.action_space,
                                      replay_buffer_size)
     elif replay_buffer_type == 'compressed':
-        data_specs = (env.observation_spec(),
-                      env.action_spec(),
-                      specs.Array((1,), np.float32, 'reward'),
-                      specs.Array((1,), np.float32, 'discount'))
-
-        print(data_specs)
-        buffer_path = Path(os.path.join(exp_path, 'buffer'))
-
-        replay_storage = ReplayBufferStorage(data_specs, buffer_path)
-        replay_loader = make_replay_loader(
-            buffer_path, params['replay_buffer_size'],
-            params['batch_size'], params['replay_buffer_num_workers'],
-            params['save_snapshot'], params['nstep'], params['discount'])
-        _replay_iter = None
+        raise NotImplementedError
     else:
         raise NotImplementedError(f"Replay buffer type {replay_buffer_type} not implemented yet")
     eval_returns = []

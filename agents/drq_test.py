@@ -8,6 +8,7 @@ import rlax
 import distrax
 from flax import linen as nn
 from jax import numpy as jnp
+from jax.random import KeyArray
 
 # from agents.sac import update_actor, update_critic, Temperature, update_temperature
 from agents.sac import Temperature, update_temperature
@@ -219,7 +220,7 @@ class DrQ:
         self.tau = tau
         self.policy_freq = policy_freq
 
-        rng = jax.random.PRNGKey(seed)
+        rng : KeyArray = jax.random.PRNGKey(seed)
         self.rng, encoder_key, actor_key, critic_key, temp_key = jax.random.split(rng, 5)
 
         encoder_model = Encoder(

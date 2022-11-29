@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Sequence
 
 import flax.linen as nn
 import jax.numpy as jnp
@@ -25,7 +25,7 @@ class NormalTanhPolicy(nn.Module):
     log_std_min: float = -10.0
     log_std_max: float = 2.0
     tanh_squash_distribution: bool = True
-    init_mean: Optional[jnp.ndarray] = None
+    init_mean: jnp.ndarray | None = None
 
     @nn.compact
     def __call__(self,

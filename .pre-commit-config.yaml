@@ -10,14 +10,10 @@ repos:
       - id: check-ast
       - id: check-added-large-files
 
-  - repo: local
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.143
     hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        always_run: true
+      - id: ruff
 #  - repo: https://github.com/psf/black
 #    rev: 21.9b0
 #    hooks:

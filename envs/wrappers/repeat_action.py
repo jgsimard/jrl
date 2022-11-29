@@ -12,8 +12,8 @@ class RepeatAction(gym.Wrapper):
 
     def step(self, action: np.ndarray) -> TimeStep:
         total_reward = 0.0
-        done = None
-        combined_info = {}
+        done = False
+        combined_info: dict = {}
 
         for _ in range(self._action_repeat):
             obs, reward, done, info = self.env.step(action)
