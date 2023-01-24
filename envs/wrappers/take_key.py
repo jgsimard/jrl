@@ -4,7 +4,6 @@ import gym
 
 
 class TakeKey(gym.ObservationWrapper):
-
     def __init__(self, env, take_key):
         super().__init__(env)
         self._take_key = take_key

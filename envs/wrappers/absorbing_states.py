@@ -8,7 +8,6 @@ def make_non_absorbing(observation):
 
 
 class AbsorbingStatesWrapper(Wrapper):
-
     def __init__(self, env):
         super().__init__(env)
         low = env.observation_space.low
@@ -18,7 +17,8 @@ class AbsorbingStatesWrapper(Wrapper):
         high = np.concatenate([high, [1]], 0)
 
         self.observation_space = gym.spaces.Box(
-            low=low, high=high, dtype=env.observation_space.dtype)
+            low=low, high=high, dtype=env.observation_space.dtype
+        )
 
     def reset(self, **kwargs):
         self._done = False
@@ -32,7 +32,7 @@ class AbsorbingStatesWrapper(Wrapper):
             observation = make_non_absorbing(observation)
             self._done = done
             self._info = info
-            truncated_done = 'TimeLimit.truncated' in info
+            truncated_done = "TimeLimit.truncated" in info
             return observation, reward, truncated_done, info
 
         if not self._absorbing:
@@ -42,8 +42,8 @@ class AbsorbingStatesWrapper(Wrapper):
         return self._absorbing_state, 0.0, True, self._info
 
 
-if __name__ == '__main__':
-    env = gym.make('Hopper-v2')
+if __name__ == "__main__":
+    env = gym.make("Hopper-v2")
     env = AbsorbingStatesWrapper(env)
     env.reset()
 

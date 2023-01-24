@@ -5,7 +5,6 @@ from envs.wrappers.common import TimeStep
 
 
 class RepeatAction(gym.Wrapper):
-
     def __init__(self, env, action_repeat=4):
         super().__init__(env)
         self._action_repeat = action_repeat
@@ -13,7 +12,7 @@ class RepeatAction(gym.Wrapper):
     def step(self, action: np.ndarray) -> TimeStep:
         total_reward = 0.0
         done = None
-        combined_info = {}
+        combined_info: dict[str, float] = {}
 
         for _ in range(self._action_repeat):
             obs, reward, done, info = self.env.step(action)

@@ -13,9 +13,6 @@ tfb = tfp.bijectors
 tfd = tfp.distributions
 
 
-
-
-
 class NormalTanhPolicy(nn.Module):
     hidden_dims: Sequence[int]
     action_dim: int
@@ -28,20 +25,22 @@ class NormalTanhPolicy(nn.Module):
     init_mean: Optional[jnp.ndarray] = None
 
     @nn.compact
-    def __call__(self,
-                 observations: jnp.ndarray,
-                 temperature: float = 1.0,
-                 training: bool = False) -> tfd.Distribution:  # distrax.Distribution:
-        outputs = MLP(self.hidden_dims[:-1],
-                      output_dim=self.hidden_dims[-1],
-                      output_activation=nn.relu,
-                      dropout_rate=self.dropout_rate
-                      )(observations, training=training)
+    def __call__(
+        self,
+        observations: jnp.ndarray,
+        temperature: float = 1.0,
+        training: bool = False,
+    ) -> tfd.Distribution:  # distrax.Distribution:
+        outputs = MLP(
+            self.hidden_dims[:-1],
+            output_dim=self.hidden_dims[-1],
+            output_activation=nn.relu,
+            dropout_rate=self.dropout_rate,
+        )(observations, training=training)
         # means
-        means = nn.Dense(
-            self.action_dim,
-            kernel_init=default_init(self.final_fc_init_scale)
-        )(outputs)
+        means = nn.Dense(self.action_dim, kernel_init=default_init(self.final_fc_init_scale))(
+            outputs
+        )
 
         if self.init_mean is not None:
             means += self.init_mean
@@ -52,12 +51,10 @@ class NormalTanhPolicy(nn.Module):
         # std
         if self.state_dependent_std:
             log_stds = nn.Dense(
-                self.action_dim,
-                kernel_init=default_init(self.final_fc_init_scale)
+                self.action_dim, kernel_init=default_init(self.final_fc_init_scale)
             )(outputs)
         else:
-            log_stds = self.param('log_stds', nn.initializers.zeros,
-                                  (self.action_dim,))
+            log_stds = self.param("log_stds", nn.initializers.zeros, (self.action_dim,))
 
         log_stds = jnp.clip(log_stds, self.log_std_min, self.log_std_max)
 
@@ -66,8 +63,8 @@ class NormalTanhPolicy(nn.Module):
         #     scale_diag=jnp.exp(log_stds) * temperature
         # )
         base_dist = tfd.MultivariateNormalDiag(
-            loc=means,
-            scale_diag=jnp.exp(log_stds) * temperature)
+            loc=means, scale_diag=jnp.exp(log_stds) * temperature
+        )
 
         if self.tanh_squash_distribution:
             # tanh numerical instability  in distrax :((((((((
@@ -76,7 +73,5 @@ class NormalTanhPolicy(nn.Module):
             #     distribution=base_dist,
             #     bijector=distrax.Block(distrax.Tanh(), ndims=1)
             # )
-            return tfd.TransformedDistribution(
-                distribution=base_dist,
-                bijector=tfb.Tanh())
+            return tfd.TransformedDistribution(distribution=base_dist, bijector=tfb.Tanh())
         return base_dist

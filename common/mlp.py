@@ -29,6 +29,12 @@ class MLP(nn.Module):
     def __call__(self, x: jnp.ndarray, training: bool = False):
         for size in self.hidden_dims:
             x = dense_layer(x, size, self.activations, self.dropout_rate, training, self.layer_norm)
-        x = dense_layer(x, self.output_dim, self.output_activation,
-                        self.dropout_rate, training, self.layer_norm)
+        x = dense_layer(
+            x,
+            self.output_dim,
+            self.output_activation,
+            self.dropout_rate,
+            training,
+            self.layer_norm,
+        )
         return x

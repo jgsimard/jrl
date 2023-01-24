@@ -1,4 +1,4 @@
-from typing import  Dict
+from typing import Dict
 
 import jax
 import numpy as np
@@ -15,7 +15,5 @@ class BaseAgent:
     def update(self, batch: Batch) -> Dict[str, float]:
         raise NotImplementedError("")
 
-    def sample_actions(self,
-                       observations: np.ndarray,
-                       temperature: float = 1.0) -> jnp.ndarray:
+    def sample_actions(self, observations: np.ndarray, temperature: float = 1.0) -> jnp.ndarray:
         raise NotImplementedError("")

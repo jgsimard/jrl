@@ -8,7 +8,6 @@ import numpy as np
 
 
 class StickyActionEnv(gym.Wrapper):
-
     def __init__(self, env, p=0.25):
         super().__init__(env)
         self.p = p

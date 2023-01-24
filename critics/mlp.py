@@ -14,11 +14,12 @@ class CriticMLP(nn.Module):
     @nn.compact
     def __call__(self, obs, actions):
         obs_actions = jnp.concatenate([obs, actions], -1)
-        q = MLP(hidden_dims=self.hidden_dims,
-                output_dim=1,
-                layer_norm=self.layer_norm,
-                dropout_rate=self.dropout_rate
-                )(obs_actions)
+        q = MLP(
+            hidden_dims=self.hidden_dims,
+            output_dim=1,
+            layer_norm=self.layer_norm,
+            dropout_rate=self.dropout_rate,
+        )(obs_actions)
         q = jnp.squeeze(q, -1)
         return q
 
@@ -33,10 +34,10 @@ class NCriticMLP(nn.Module):
     def __call__(self, obs, actions):
         n_critic_mlp = nn.vmap(
             CriticMLP,
-            in_axes=None, out_axes=0,
-            variable_axes={'params': 0},
-            split_rngs={'params': True},
-            axis_size=self.n_critic)
-        return n_critic_mlp(self.hidden_dims,
-                            self.layer_norm,
-                            self.dropout_rate)(obs, actions)
+            in_axes=None,
+            out_axes=0,
+            variable_axes={"params": 0},
+            split_rngs={"params": True},
+            axis_size=self.n_critic,
+        )
+        return n_critic_mlp(self.hidden_dims, self.layer_norm, self.dropout_rate)(obs, actions)

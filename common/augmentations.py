@@ -3,10 +3,9 @@ from jax import numpy as jnp
 
 
 def random_crop(key, img, padding):
-    crop_from = jax.random.randint(key, (2, ), 0, 2 * padding + 1)
-    crop_from = jnp.concatenate([crop_from, jnp.zeros((1, ), dtype=jnp.int32)])
-    padded_img = jnp.pad(img, ((padding, padding), (padding, padding), (0, 0)),
-                         mode='edge')
+    crop_from = jax.random.randint(key, (2,), 0, 2 * padding + 1)
+    crop_from = jnp.concatenate([crop_from, jnp.zeros((1,), dtype=jnp.int32)])
+    padded_img = jnp.pad(img, ((padding, padding), (padding, padding), (0, 0)), mode="edge")
     return jax.lax.dynamic_slice(padded_img, crop_from, img.shape)
 
 
