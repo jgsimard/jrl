@@ -4,6 +4,8 @@ import numpy as np
 from flax.training import train_state
 import optax
 
+# import jax_dataclasses as jdc
+
 
 Params = flax.core.FrozenDict
 
@@ -18,6 +20,7 @@ class TrainState(train_state.TrainState):
 
 
 @flax.struct.dataclass
+# @jdc.pytree_dataclass
 class Batch:  # type: ignore
     observations: np.ndarray
     actions: np.ndarray
